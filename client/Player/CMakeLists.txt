@@ -29,6 +29,8 @@ find_package(Qt6 REQUIRED COMPONENTS Widgets)
 find_package(Qt6 REQUIRED COMPONENTS Widgets)
 find_package(Qt6 REQUIRED COMPONENTS Widgets)
 find_package(Qt6 REQUIRED COMPONENTS Widgets)
+find_package(Qt6 REQUIRED COMPONENTS Widgets)
+find_package(Qt6 REQUIRED COMPONENTS Widgets)
 
     qt_add_executable(Player
         MANUAL_FINALIZATION
@@ -50,6 +52,14 @@ find_package(Qt6 REQUIRED COMPONENTS Widgets)
         modifymyselfdialog.h modifymyselfdialog.cpp modifymyselfdialog.ui
         newpassworddialog.h newpassworddialog.cpp newpassworddialog.ui
         uploadvideopage.h uploadvideopage.cpp uploadvideopage.ui
+        adminwidget.h adminwidget.cpp adminwidget.ui
+        checktable.h checktable.cpp checktable.ui
+        roletable.h roletable.cpp roletable.ui
+        checktableitem.h checktableitem.cpp checktableitem.ui
+        roletableitem.h roletableitem.cpp roletableitem.ui
+        edituserdialog.h edituserdialog.cpp edituserdialog.ui
+        pagebutton.h pagebutton.cpp
+        paginator.h paginator.cpp
 
     )
 # Define target properties for Android with Qt 6 as:
@@ -71,6 +81,8 @@ else()
 endif()
 
 target_link_libraries(Player PRIVATE Qt${QT_VERSION_MAJOR}::Widgets)
+target_link_libraries(Player PRIVATE Qt6::Widgets)
+target_link_libraries(Player PRIVATE Qt6::Widgets)
 target_link_libraries(Player PRIVATE Qt6::Widgets)
 target_link_libraries(Player PRIVATE Qt6::Widgets)
 target_link_libraries(Player PRIVATE Qt6::Widgets)

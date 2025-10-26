@@ -18,7 +18,8 @@ int main(int argc, char *argv[])
 
     // 显⽰主界⾯
 
-    Player w;
-    w.show();
+    // Player实例通过getInstance获取
+    Player *player = Player::getInstance();
+    player->show();
     return a.exec();
 }

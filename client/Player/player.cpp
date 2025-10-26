@@ -9,6 +9,9 @@
 
 
 
+// 初始化实例指针，并获取实例
+Player *Player::instance = nullptr;
+
 Player::Player(QWidget *parent)
     : QWidget(parent)
     , ui(new Ui::Player)
@@ -24,6 +27,14 @@ Player::Player(QWidget *parent)
 Player::~Player()
 {
     delete ui;
+}
+
+Player *Player::getInstance()
+{
+    if(instance == nullptr){
+        instance = new Player();
+    }
+    return instance;
 }
 
 void Player::initUI()
