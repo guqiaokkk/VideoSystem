@@ -21,8 +21,11 @@ class Player : public QWidget
     Q_OBJECT
 
 public:
-    Player(QWidget *parent = nullptr);
+
     ~Player();
+
+    // 获取实例
+    static Player *getInstance();
 
     // 绑定信号槽函数
     void connectSignalAndSlot();
@@ -39,6 +42,8 @@ protected:
 private:
     void initUI();
 
+    // 将构造函数私有化
+    Player(QWidget *parent = nullptr);
 
 
 private:
@@ -46,5 +51,8 @@ private:
 
     //在head上按下时，⿏标相对于窗⼝左上⻆的偏移
     QPoint dragpos;
+
+    // 添加单例实例
+    static Player *instance;
 };
 #endif // PLAYER_H

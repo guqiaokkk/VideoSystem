@@ -451,7 +451,7 @@
              <widget class="QStackedWidget" name="stackedWidget">
               <widget class="HomePageWidget" name="homePage"/>
               <widget class="MyselfWidget" name="myPage"/>
-              <widget class="QWidget" name="sysPage"/>
+              <widget class="AdminWidget" name="sysPage"/>
               <widget class="UploadVideoPage" name="uploadVideoPage"/>
              </widget>
             </item>
@@ -488,6 +488,12 @@
    <class>UploadVideoPage</class>
    <extends>QWidget</extends>
    <header location="global">uploadvideopage.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>AdminWidget</class>
+   <extends>QWidget</extends>
+   <header location="global">adminwidget.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>
