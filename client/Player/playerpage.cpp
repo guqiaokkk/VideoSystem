@@ -1,6 +1,9 @@
 #include "playerpage.h"
 #include "ui_playerpage.h"
 
+#include "login.h"
+#include "toast.h"
+
 PlayerPage::PlayerPage(QWidget *parent)
     : QWidget(parent)
     , ui(new Ui::PlayerPage)
@@ -24,6 +27,9 @@ PlayerPage::PlayerPage(QWidget *parent)
 
     // 绑定倍数播放按钮信号槽
     connect(ui->speedBtn, &QPushButton::clicked, this, &PlayerPage::onSpeedBtnClicked);
+
+    // 点赞
+    connect(ui->likeImgBtn, &QPushButton::clicked, this, &PlayerPage::onLikeImageBtnClcked);
 }
 
 PlayerPage::~PlayerPage()
@@ -61,4 +67,11 @@ void PlayerPage::onSpeedBtnClicked()
     moveWindows(mapToGlobal(QPoint(0,0)));
     // 弹出倍速窗⼝
     playSpeed->show();
+}
+
+void PlayerPage::onLikeImageBtnClcked()
+{
+    // 检测⽤⼾是否登录，登录时才能点赞
+    Login* login = new Login();
+    Toast::showMessage("please Admin", login);
 }

@@ -7,6 +7,9 @@ Paginator::Paginator(int count, QWidget *parent)
 {
     // 设置⻚数
     this->pageCount = count;
+
+    this->currentPage = 1;
+
     // 设置尺⼨
     this->setMinimumSize(1270, 32);
     // 创建⽔平布局
@@ -19,7 +22,7 @@ Paginator::Paginator(int count, QWidget *parent)
     // 创建上⼀⻚按钮
     prevPageBtn = new QPushButton();
     prevPageBtn->setIcon(QIcon(":/images/admin/arrow-left.png"));
-    setBtnStyle(nextPageBtn);
+    setBtnStyle(prevPageBtn);
 
     // 创建下⼀⻚按钮
     nextPageBtn = new QPushButton();
@@ -83,7 +86,7 @@ Paginator::Paginator(int count, QWidget *parent)
         // < 1 2 3 4 5 ... n > 跳转□⻚
         layout->addStretch();// 增加⼀个空⽩区域
         layout->addWidget(prevPageBtn);
-        for(int i = 1; i < pages.size(); i++)
+        for(int i = 0; i < pages.size(); i++)
         {
             layout->addWidget(pages[i]);
         }
@@ -192,7 +195,7 @@ void Paginator::jumpToPageCase1(int page)
             pages[i]->setActive(false);
         }
 
-        if(i == 1 || i == 5){
+        if( i == 5){
             pages[i]->setFolded(true);
         }
         else{

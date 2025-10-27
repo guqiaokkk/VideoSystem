@@ -31,6 +31,7 @@ find_package(Qt6 REQUIRED COMPONENTS Widgets)
 find_package(Qt6 REQUIRED COMPONENTS Widgets)
 find_package(Qt6 REQUIRED COMPONENTS Widgets)
 find_package(Qt6 REQUIRED COMPONENTS Widgets)
+find_package(Qt6 REQUIRED COMPONENTS Widgets)
 
     qt_add_executable(Player
         MANUAL_FINALIZATION
@@ -60,6 +61,8 @@ find_package(Qt6 REQUIRED COMPONENTS Widgets)
         edituserdialog.h edituserdialog.cpp edituserdialog.ui
         pagebutton.h pagebutton.cpp
         paginator.h paginator.cpp
+        login.h login.cpp login.ui
+        toast.h toast.cpp
 
     )
 # Define target properties for Android with Qt 6 as:
@@ -81,6 +84,7 @@ else()
 endif()
 
 target_link_libraries(Player PRIVATE Qt${QT_VERSION_MAJOR}::Widgets)
+target_link_libraries(Player PRIVATE Qt6::Widgets)
 target_link_libraries(Player PRIVATE Qt6::Widgets)
 target_link_libraries(Player PRIVATE Qt6::Widgets)
 target_link_libraries(Player PRIVATE Qt6::Widgets)
