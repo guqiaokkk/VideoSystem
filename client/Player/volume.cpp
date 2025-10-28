@@ -4,6 +4,8 @@
 Volume::Volume(QWidget *parent)
     : QWidget(parent)
     , ui(new Ui::Volume)
+    , volumeRatio(35)
+    // 默认⾳量⼤⼩为35
 {
     ui->setupUi(this);
 
@@ -18,6 +20,11 @@ Volume::~Volume()
     delete ui;
 }
 
+int Volume::getVolume() const
+{
+    return volumeRatio;
+}
+
 bool Volume::eventFilter(QObject *watched, QEvent *event)
 {
     if(ui->volumeBox == watched){
@@ -27,11 +34,14 @@ bool Volume::eventFilter(QObject *watched, QEvent *event)
         }
         //release
         else if(event->type() == QEvent::MouseButtonRelease){
-            ;
+            // 发射⾳量调节信号
+            emit setVolume(volumeRatio);
         }
         //move
         else if(event->type() == QEvent::MouseMove){
             calcVolume();
+            // 发射⾳量调节信号
+            emit setVolume(volumeRatio);
         }
         return true;
     }
@@ -60,4 +70,7 @@ void Volume::calcVolume()
         vlBtn = 140;
     }
     ui->volumeBtn->move(ui->volumeBtn->x(), vlBtn);
+
+    // 计算⾳量⼤⼩
+    volumeRatio = 100 - (int)(ui->volumeBtn->y() / (double)145 / 100);
 }

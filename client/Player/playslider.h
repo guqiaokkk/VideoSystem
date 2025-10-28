@@ -22,10 +22,16 @@ public:
     void mouseReleaseEvent(QMouseEvent *event);
     void mouseMoveEvent(QMouseEvent *event);
 
+    // 设置播放进度
+    void setPlayStep(double stepRatio);
 
 private:
     // 改变outLine的geometry
     void moveSlider();
+
+signals:
+    // 设置播放进度信号
+    void setPlayProgress(double playRatio);
 
 private:
     Ui::PlaySlider *ui;

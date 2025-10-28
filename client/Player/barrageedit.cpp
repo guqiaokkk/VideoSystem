@@ -24,4 +24,12 @@ BarrageEdit::BarrageEdit(QWidget *parent)
         "font-family : 微软雅⿊;"
         );
     sendBSBtn->move(width()-sendBSBtn->width() - 2, 2);
+
+    // 发送弹幕按钮点击
+    connect(sendBSBtn, &QPushButton::clicked, this, &BarrageEdit::onSendBulletScreenBtn);
+}
+
+void BarrageEdit::onSendBulletScreenBtn()
+{
+    emit sendBulletScreen(this->text());
 }

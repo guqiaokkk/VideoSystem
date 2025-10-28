@@ -3,6 +3,8 @@
 
 #include "util.h"
 
+#include <QDir>
+
 VideoBox::VideoBox(QWidget *parent)
     : QWidget(parent)
     , ui(new Ui::VideoBox)
@@ -41,4 +43,12 @@ bool VideoBox::eventFilter(QObject *watched, QEvent *event)
 void VideoBox::onPlayClicked()
 {
     playPage->show();
+
+    // mpv库测试
+    QDir dir = QDir::current();
+    dir.cdUp();
+    dir.cdUp();
+    QString videoPath = dir.absolutePath();
+    videoPath += "/videos/111.mp4";
+    playPage->startPlaying(videoPath);
 }
