@@ -26,20 +26,20 @@ PlaySpeed::~PlaySpeed()
 
 void PlaySpeed::onPlay05Speed()
 {
-
+    emit setPlaySpeed(0.5);
 }
 
 void PlaySpeed::onPlay10Speed()
 {
-
+    emit setPlaySpeed(1.0);
 }
 
 void PlaySpeed::onPlay15Speed()
 {
-
+    emit setPlaySpeed(1.5);
 }
 
 void PlaySpeed::onPlay20Speed()
 {
-
+    emit setPlaySpeed(2.0);
 }

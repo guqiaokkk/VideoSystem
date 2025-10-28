@@ -11,7 +11,12 @@ class BarrageEdit : public QLineEdit
 public:
     explicit BarrageEdit(QWidget *parent = nullptr);
 
+    // 发送弹幕按钮点击
+    void onSendBulletScreenBtn();
+
 signals:
+    // 通知PlayerPage发送该条弹幕
+    void sendBulletScreen(const QString &text);
 
 private:
     QPushButton *sendBSBtn;

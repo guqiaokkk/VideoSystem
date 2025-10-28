@@ -21,6 +21,9 @@ private:
     void onPlay15Speed();
     void onPlay20Speed();
 
+signals:
+    void setPlaySpeed(double speed);
+
 private:
     Ui::PlaySpeed *ui;
 };
