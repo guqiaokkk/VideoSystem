@@ -15,7 +15,7 @@ public:
     explicit UploadVideoPage(QWidget *parent = nullptr);
     ~UploadVideoPage();
 
-private:
+private slots:
     // 提交按钮槽函数
     void onCommitBtnClicked();
 
@@ -27,6 +27,12 @@ private:
 
     // 更改视频封⾯图按钮槽函数
     void onChangeBtnClicked();
+
+    // QComoBox中分类选择改变槽函数
+    void onUpdataTags(const QString &kind);
+
+    // 将kind下标签以按钮形式展⽰在界⾯上
+    void addTagsByKind(const QString &kind);
 
 signals:
     // 提交后，从当前页面切换回我的⻚⾯ 的信号

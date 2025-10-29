@@ -5,6 +5,8 @@
 
 #include "util.h"
 
+#include "./model/datacenter.h"
+
 HomePageWidget::HomePageWidget(QWidget *parent)
     : QWidget(parent)
     , ui(new Ui::HomePageWidget)
@@ -28,12 +30,16 @@ HomePageWidget::~HomePageWidget()
 
 void HomePageWidget::initKindsAndTags()
 {
+    // 到数据中⼼中获取所有分类数据
+    auto dataCenter = model::DataCenter::getInstance();
+    auto kindAndTagPtr = dataCenter->getKindAndTagsClassPtr();
+    auto kinds = kindAndTagPtr->getAllKinds();
+
     // 创建分类按钮
     QPushButton *kindBtn = buildSelectBtn(ui->classifys, "3ECEFF", "分类");
     ui->classifyHLayout->addWidget(kindBtn);
 
-    // 创建分类
-    QList<QString> kinds = {"历史", "美⻝", "游戏", "科技", "运动", "动物", "旅⾏", "电影"};
+    // 具体的分类按钮
     for(auto &kind : kinds)
     {
         QPushButton *kindbtn = buildSelectBtn(ui->classifys, "#222222", kind);
@@ -48,18 +54,9 @@ void HomePageWidget::initKindsAndTags()
     // 将按钮添加到分类的布局器中
     ui->classifyHLayout->setSpacing(8);
 
-    // 分类和该分类下所有标签映射
-    tags = { {"历史", {"中国史", "世界史", "历史⼈物", "艺术", "⽂化", "奇闻"}},
-            {"美⻝", {"美⻝测评", "美⻝制作", "美⻝攻略", "美⻝记录", "探店", "⽔果", "海鲜"}},
-            {"游戏", {"游戏攻略", "单机游戏", "电⼦竞技", "⼿机游戏", "⽹络游戏", "游戏赛事", "桌游棋牌"}},
-            {"科技", {"数码", "软件应⽤", "智能家居", "⼿机", "电脑", "⼈⼯智能", "基础设施"}},
-            {"运动", {"篮球", "⾜球", "乒乓球", "⽻⽑球", "健⾝", "竞技体育", "运动装备"}},
-            {"动物", {"哈基米", "大狗嚼", "宠物知识", "动物资讯", "野⽣动物", "动物世界", "萌宠"}},
-            {"旅⾏", {"旅游攻略", "旅⾏Vlog", "⾃驾游", "交通", "环球旅⾏", "露营", "野外⽣存"}},
-            {"电影", {"电影解说", "电影推荐", "电影剪辑", "搞笑", "吐槽", "悬疑", "经典"}}};
-
-    // 创建分类下的标签，默认显⽰第0个分类
-    resetTags(tags[kinds[0]]);
+    // 获取分类下标签，默认显⽰第0个分类
+    auto tags = kindAndTagPtr->getTagsByKind(kinds[0]).keys();
+    resetTags(tags);
 }
 
 void HomePageWidget::connectSignalAndSlot()
@@ -117,7 +114,9 @@ void HomePageWidget::onKindBtnClicked(QPushButton *clickedkindBtn)
     }
 
     // 根据当前选中分类，重新添加标签
-    resetTags(tags[clickedkindBtn->text()]);
+    auto dataCenter = model::DataCenter::getInstance();
+    auto kindAndTagPtr = dataCenter->getKindAndTagsClassPtr();
+    resetTags(kindAndTagPtr->getTagsByKind(clickedkindBtn->text()).keys());
 }
 
 void HomePageWidget::onTagBtnClicked(QPushButton *clickedtagBtn)
