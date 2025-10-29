@@ -34,6 +34,7 @@ find_package(Qt6 REQUIRED COMPONENTS Widgets)
 find_package(Qt6 REQUIRED COMPONENTS Widgets)
 find_package(Qt6 REQUIRED COMPONENTS Core)
 find_package(Qt6 REQUIRED COMPONENTS Widgets)
+find_package(Qt6 REQUIRED COMPONENTS Core)
 
     qt_add_executable(Player
         MANUAL_FINALIZATION
@@ -68,6 +69,9 @@ find_package(Qt6 REQUIRED COMPONENTS Widgets)
         mpv/dll/libmpv-2.dll mpv/dll/libmpv.dll.a mpv/mpv/render_gl.h mpv/mpv/stream_cb.h mpv/client.h mpv/render.h mpv/render_gl.h mpv/stream_cb.h
         mpv/mpvplayer.h mpv/mpvplayer.cpp
         bulletscreenitem.h bulletscreenitem.cpp
+        model/datacenter.h model/datacenter.cpp
+        model/data.h
+        model/data.cpp
 
     )
 # Define target properties for Android with Qt 6 as:
@@ -102,6 +106,7 @@ target_link_libraries(Player PRIVATE Qt6::Core)
 set(MPV_DLL ${CMAKE_CURRENT_SOURCE_DIR}/mpv/dll/libmpv-2.dll) #设置mpv库⽬录
 target_link_libraries(Player PRIVATE Qt${QT_VERSION_MAJOR}::Widgets ${MPV_DLL})
 target_link_libraries(Player PRIVATE Qt6::Widgets)
+target_link_libraries(Player PRIVATE Qt6::Core)
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
 # If you are developing for iOS or macOS you should consider setting an

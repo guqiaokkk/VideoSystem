@@ -2,14 +2,22 @@
 #include "ui_uploadvideopage.h"
 
 #include "util.h"
+#include "model/datacenter.h"
 
 #include <QFileDialog>
+
 
 UploadVideoPage::UploadVideoPage(QWidget *parent)
     : QWidget(parent)
     , ui(new Ui::UploadVideoPage)
 {
     ui->setupUi(this);
+
+    // 获取所有分类，并更新到界⾯
+    auto dataCenter = model::DataCenter::getInstance();
+    auto kindAndTag = dataCenter->getKindAndTagsClassPtr();
+    ui->kinds->addItems(kindAndTag->getAllKinds());
+    ui->kinds->setCurrentIndex(-1); // 默认不选中
 
     // 设置标签不拦截鼠标事件
     ui->imgLabel->setAttribute(Qt::WA_TransparentForMouseEvents);
@@ -25,6 +33,9 @@ UploadVideoPage::UploadVideoPage(QWidget *parent)
     connect(ui->plainTextEdit, &QPlainTextEdit::textChanged, this, &UploadVideoPage::onPlainEditTextChanged);
 
     connect(ui->changeButton, &QPushButton::clicked, this, &UploadVideoPage::onChangeBtnClicked);
+
+    // 分类选择改变
+    connect(ui->kinds, &QComboBox::currentTextChanged, this, &UploadVideoPage::onUpdataTags);
 }
 
 UploadVideoPage::~UploadVideoPage()
@@ -101,4 +112,63 @@ void UploadVideoPage::onChangeBtnClicked()
         ui->imgLabel->setPixmap(pixmap);
         repaint();
     }
+}
+
+void UploadVideoPage::onUpdataTags(const QString &kind)
+{
+    addTagsByKind(kind);
+}
+
+void UploadVideoPage::addTagsByKind(const QString &kind)
+{
+    // 1.添加之前先清空之前的标签
+    QList<QPushButton*> tagBtnList = ui->tagWidget->findChildren<QPushButton*>();
+    for(auto tagBtn : tagBtnList)
+    {
+        // 将元素从布局中移除，并不会删除
+        ui->tagLayout->removeWidget(tagBtn);
+        delete tagBtn;
+    }
+    // 将添加的弹簧删除掉
+    // 弹簧本来是最后⼀个控件，当layout中的按钮删除之后，弹簧就变成第0个控件了
+    QLayoutItem *spaceItem = ui->tagLayout->itemAt(ui->tagLayout->count() - 1);
+    ui->tagLayout->removeItem(spaceItem);
+
+    // 2. 根据kind获取标签--如果key不存在直接返回
+    if(kind.isEmpty()){
+        return;
+    }
+    auto kindAndTagPtr = model::DataCenter::getInstance()->getKindAndTagsClassPtr();
+    auto kinds = model::DataCenter::getInstance()->getKindAndTagsClassPtr()->getAllKinds();
+    auto tags = kindAndTagPtr->getTagsByKind(kind);
+
+    // 3. 创建该标签对应的按钮
+    for(auto &tag : tags.keys())
+    {
+        QPushButton *tagBtn = new QPushButton(ui->tagContent);
+        tagBtn->setFixedSize(98, 49);
+        tagBtn->setText(tag);
+        tagBtn->setCheckable(true);
+        // 设置按钮的状态为选中和未选中两种状态
+
+        // QPushButton:unchecked 当按钮未选中时
+        tagBtn->setStyleSheet("QPushButton{"
+                              "border : 1px solid #3ECEFE;"
+                              "border-radius : 4px;"
+                              "color : #3ECEFE;"
+                              "font-family : 微软雅⿊;"
+                              "font-size : 16px;"
+                              "background-color : #FFFFFF;}"
+                              "QPushButton:checked{"
+                              "background-color : #3ECEFE;"
+                              "color : #FFFFFF;}"
+                              "QPushButton:unchecked{"
+                              "background-color : #FFFFFF;"
+                              "color : #3ECEFE;}");
+        ui->tagLayout->addWidget(tagBtn);
+    }
+
+    // 在tagLayout最后放⼀个空⽩间距，将按钮挤到左侧
+    ui->tagLayout->insertSpacing(tags.size(), ui->tagContent->width() - (98+20)*tags.size());
+    ui->tagLayout->setSpacing(20);
 }
