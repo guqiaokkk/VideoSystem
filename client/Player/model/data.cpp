@@ -62,5 +62,87 @@ int KindAndTag::getTagId(QString kind, QString tag) const
 }
 
 
+
+/////////////////////////////////////////////////
+/// 视频信息结构
+/////////////////////////////////////////////////
+void VideoInfo::loadVideoInfo(const QJsonObject &jsonObj)
+{
+    videoId = jsonObj["videoId"].toString();
+    userId = jsonObj["userId"].toString();
+    userAvatarId = jsonObj["userAvatarId"].toString();
+    nickName = jsonObj["nickname"].toString();
+    videoFileId = jsonObj["videoFileId"].toString();
+    photoFileId = jsonObj["photoFileId"].toString();
+    likeCount = jsonObj["likeCount"].toInt();
+    playCount = jsonObj["playCount"].toInt();
+    videoSize = jsonObj["videoSize"].toInt();
+    videoDesc = jsonObj["videoDesc"].toString();
+    videoTitle = jsonObj["videoTitle"].toString();
+    videoDuration = jsonObj["videoDuration"].toInt();
+    videoUpTime = jsonObj["videoUpTime"].toString();
+}
+
+
+
+/////////////////////////////////////////////////
+// 视频列表-界⾯上显⽰需要
+/////////////////////////////////////////////////
+VideoList::VideoList()
+    : pageIndex(1)          // 分⻚器是从第1⻚开始的
+    , videototalCount(0)
+{}
+
+void VideoList::setPageIndex(int pageIndex)
+{
+    this->pageIndex = pageIndex;
+}
+
+int VideoList::getPageIndex() const
+{
+    return pageIndex;
+}
+
+int VideoList::getVideoCount() const
+{
+    return videoInfos.size();
+}
+
+void VideoList::setVideoTotalCount(int videoTotalCount)
+{
+    this->videototalCount = videoTotalCount;
+}
+
+int VideoList::getVideoTotalCount() const
+{
+    return videototalCount;
+}
+
+void VideoList::addVideo(const VideoInfo &videoInfo)
+{
+    videoInfos.append(videoInfo);
+}
+
+const QList<VideoInfo> &VideoList::getVideoList() const
+{
+    return videoInfos;
+}
+
+void VideoList::clearVideoList()
+{
+    videoInfos.clear();
+    videototalCount = 0;
+    pageIndex = 1;
+}
+
+void BarrageInfo::loadBarrageInfo(QJsonObject &barrageJson)
+{
+    barrageId = barrageJson["barrageId"].toString();
+    userId = barrageJson["userId"].toString();
+    text = barrageJson["barrageContent"].toString();
+    playTime = barrageJson["barrageTime"].toInt();
+}
+
+
 } //end model
 

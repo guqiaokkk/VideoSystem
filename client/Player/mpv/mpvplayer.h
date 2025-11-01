@@ -33,6 +33,9 @@ public:
     // 设置视频播放位置
     void setCurrentPlayPosition(int64_t seconds);
 
+    // 获取当前播放时间
+    int64_t getCurPlayTime()const;
+
 private slots:
     void onMpvEvents();
 
@@ -44,10 +47,16 @@ signals:
     // 通知界面更新当前播放事件
     void playPositionChanged(int64_t seconds);
 
+    // 所有视频分⽚播放结束信号
+    void endOfPlaylist();
+
 
 private:
     // 处理mpv的事件
     void handleMpvEvent(mpv_event *event);
+
+    // 统计视频播放的当前全局时间
+    int64_t curPlayTime;
 
 private:
     mpv_handle *mpv;

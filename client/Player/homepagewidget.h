@@ -9,6 +9,16 @@ namespace Ui {
 class HomePageWidget;
 }
 
+// 向服务器获取视频列表的⽅式
+enum VideoListStyle
+{
+    AllStyle,   // 所有视频列表
+    KindStyle,  // 分类视频列表
+    TagStyle,   // 标签视频列表
+    SearchStyle // 搜索视频列表
+};
+
+
 class HomePageWidget : public QWidget
 {
     Q_OBJECT
@@ -31,7 +41,7 @@ private:
     // 初始化刷新和置顶按钮
     void initRefreshAndTop();
 
-    // 初始化视频列表
+    // 初始化视频列表, 从服务器获取视频所有视频列表
     void initVideos();
 
 protected:
@@ -46,12 +56,27 @@ protected:
     // 置顶按钮点击槽函数
     void onTopBtnClicked();
 
+    // 更新视频列表
+    void upDataVideoList();
 
+    // 清空视频列表
+    void clearLayoutVideos();
+
+    // 搜索视频
+    void onSearchVideos(const QString &searchText);
+
+    // QScrollArea滚动条位置检测
+    void onScrollAreaValueChanged(int value);
 
 private:
     Ui::HomePageWidget *ui;
 
+    // 记录当前分类和标签
+    QString curKind;
+    QString curTag;
 
+    // 标记当前获取视频列表的⽅式
+    VideoListStyle videoListStyle;
 };
 
 #endif // HOMEPAGEWIDGET_H

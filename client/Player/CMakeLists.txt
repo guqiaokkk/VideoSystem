@@ -10,7 +10,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets)
-find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets)
+find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets Network)
 
 include_directories(
     ${PROJECT_SOURCE_DIR}
@@ -34,6 +34,8 @@ find_package(Qt6 REQUIRED COMPONENTS Widgets)
 find_package(Qt6 REQUIRED COMPONENTS Widgets)
 find_package(Qt6 REQUIRED COMPONENTS Core)
 find_package(Qt6 REQUIRED COMPONENTS Widgets)
+find_package(Qt6 REQUIRED COMPONENTS Core)
+find_package(Qt6 REQUIRED COMPONENTS Core)
 find_package(Qt6 REQUIRED COMPONENTS Core)
 
     qt_add_executable(Player
@@ -72,6 +74,9 @@ find_package(Qt6 REQUIRED COMPONENTS Core)
         model/datacenter.h model/datacenter.cpp
         model/data.h
         model/data.cpp
+        netclient/netclient.h netclient/netclient.cpp
+        test/TestHttp.h
+
 
     )
 # Define target properties for Android with Qt 6 as:
@@ -104,8 +109,10 @@ target_link_libraries(Player PRIVATE Qt6::Widgets)
 target_link_libraries(Player PRIVATE Qt6::Core)
 
 set(MPV_DLL ${CMAKE_CURRENT_SOURCE_DIR}/mpv/dll/libmpv-2.dll) #设置mpv库⽬录
-target_link_libraries(Player PRIVATE Qt${QT_VERSION_MAJOR}::Widgets ${MPV_DLL})
+target_link_libraries(Player PRIVATE Qt${QT_VERSION_MAJOR}::Widgets ${MPV_DLL} Qt6::Network)
 target_link_libraries(Player PRIVATE Qt6::Widgets)
+target_link_libraries(Player PRIVATE Qt6::Core)
+target_link_libraries(Player PRIVATE Qt6::Core)
 target_link_libraries(Player PRIVATE Qt6::Core)
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.

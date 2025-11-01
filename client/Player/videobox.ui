@@ -59,7 +59,7 @@
       </size>
      </property>
      <property name="styleSheet">
-      <string notr="true">#imgBox { border-image:url(:/images/homePage/videoImage.png); }
+      <string notr="true">
 QLabel{  color : #FFFFFF; 
 				border : none; 
 				font-size : 14px; 
@@ -180,7 +180,7 @@ QLabel{  color : #FFFFFF;
             <item>
              <widget class="QLabel" name="playNum">
               <property name="text">
-               <string>114.5万</string>
+               <string/>
               </property>
              </widget>
             </item>
@@ -242,7 +242,7 @@ QLabel{  color : #FFFFFF;
             <item>
              <widget class="QLabel" name="likeNum">
               <property name="text">
-               <string>1216</string>
+               <string/>
               </property>
              </widget>
             </item>
@@ -283,7 +283,7 @@ QLabel{  color : #FFFFFF;
             <item>
              <widget class="QLabel" name="videoDuration">
               <property name="text">
-               <string>12:16</string>
+               <string/>
               </property>
              </widget>
             </item>
@@ -335,7 +335,7 @@ QLabel{  color : #FFFFFF;
 						font-family : 微软雅⿊; }</string>
         </property>
         <property name="text">
-         <string>&quot;世界级剧情尖端二游“</string>
+         <string/>
         </property>
         <property name="wordWrap">
          <bool>true</bool>
@@ -395,8 +395,7 @@ font-family : 微软雅⿊; }</string>
          </size>
         </property>
         <property name="styleSheet">
-         <string notr="true">#userIcon{ border-image: 
-url(&quot;:/images/homePage/touxiang.png&quot;); }</string>
+         <string notr="true"/>
         </property>
         <property name="text">
          <string/>
@@ -406,14 +405,14 @@ url(&quot;:/images/homePage/touxiang.png&quot;); }</string>
       <item>
        <widget class="QLabel" name="userNickName">
         <property name="text">
-         <string>⽤⼾昵称 ·</string>
+         <string/>
         </property>
        </widget>
       </item>
       <item>
        <widget class="QLabel" name="loadupTime">
         <property name="text">
-         <string>12.16</string>
+         <string/>
         </property>
        </widget>
       </item>

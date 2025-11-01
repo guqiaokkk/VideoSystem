@@ -4,6 +4,7 @@
 #include <QList>
 #include <QHash>
 #include <QString>
+#include <qjsonobject.h>
 
 
 namespace model{
@@ -38,6 +39,83 @@ private:
     QHash<QString, QHash<QString, int>> tagIds;
 
     static int id;
+};
+
+
+/////////////////////////////////////////////////
+/// 弹幕
+/////////////////////////////////////////////////
+class BarrageInfo
+{
+public:
+    QString barrageId;  // 弹幕id
+    QString userId;     // 发送弹幕⽤⼾
+    int64_t playTime;   // 发送弹幕时当前播放时间
+    QString text;       // 弹幕内容
+
+    // 解析弹幕数据
+    void loadBarrageInfo(QJsonObject &barrageJson);
+};
+
+
+/////////////////////////////////////////////////
+/// 视频信息结构
+/////////////////////////////////////////////////
+class VideoInfo
+{
+public:
+    QString videoId;            // 视频Id
+    QString userId;             // ⽤⼾Id
+    QString userAvatarId;       // ⽤⼾图像Id
+    QString nickName;           // ⽤⼾昵称
+    QString videoFileId;        // 视频⽂件Id
+    QString photoFileId;        // 视频封⾯Id
+    int64_t likeCount;          // 点赞量
+    int64_t playCount;          // 播放量
+    int64_t videoSize;          // 视频⼤⼩
+    QString videoDesc;          // 视频描述信息
+    QString videoTitle;         // 视频标题
+    int64_t videoDuration;      // 持续时⻓
+    QString videoUpTime;        // 视频上传时间
+
+    // 通过 JSON 对象加载视频信息
+    void loadVideoInfo(const QJsonObject &jsonObj);
+};
+
+
+/////////////////////////////////////////////////
+// 视频列表-界⾯上显⽰需要
+/////////////////////////////////////////////////
+class VideoList
+{
+public:
+    VideoList();
+
+    // 设置或获取下⼀次要获取视频⻚号
+    void setPageIndex(int pageIndex);
+    int getPageIndex() const;
+
+    // 获取视频列表中：实际视频个数
+    int getVideoCount() const;
+
+    // 设置或获取特定条件下(⽐如分类)总视频个数，视频审核⻚⾯⽤来计算分⻚器上总⻚数
+    void setVideoTotalCount(int videoTotalCount);
+    int getVideoTotalCount() const;
+
+    // 往视频列表中添加视频
+    void addVideo(const VideoInfo &videoInfo);
+
+    // 获取排序后的视频列表
+    const QList<VideoInfo> &getVideoList() const;
+
+    // 将列表中的所有视频清空
+    void clearVideoList();
+
+    QList<VideoInfo> videoInfos;        // ⽬前从服务器获取下来的视频数据
+    int64_t pageIndex;                  // ⻚⾯索引
+    int64_t videototalCount;            // 该条件下所包含的所有视频的总数,⽐如：分类选择动物，该字段为动物分类下视频总数
+                                        // ⽤视频总数和PAGE_COUNT能计算出该分类下总共有多少⻚视频
+    const static int PAGE_COUNT = 20;   // 一页中包含的视频个数
 };
 
 

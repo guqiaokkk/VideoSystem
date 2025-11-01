@@ -9,6 +9,10 @@ class startupPage : public QDialog
 public:
     explicit startupPage(QDialog *parent = nullptr);
     void startup();
+
+private:
+    // 标记临时⽤⼾是否登录成功
+    bool loginSuccess = false;
 };
 
 #endif // STARTUPPAGE_H

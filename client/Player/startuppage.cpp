@@ -1,5 +1,7 @@
 #include "startuppage.h"
 
+#include "./model/datacenter.h"
+
 #include <QLabel>
 #include <QTimer>
 
@@ -15,18 +17,33 @@ startupPage::startupPage(QDialog *parent)
     QLabel *imglabel = new QLabel(this);
     imglabel->setPixmap(QPixmap(":/images/startupPage/biteshipin.png"));
     imglabel->move(524,374);
+
+    // 临时⽤⼾登录成功信号槽绑定
+    auto dataCenter = model::DataCenter::getInstance();
+    connect(dataCenter, &model::DataCenter::loginTempUserDone, this, [=](){
+        loginSuccess = true;
+    });
 }
 
 void startupPage::startup()
 {
     QTimer *timer = new QTimer();
+
+    // 在时间达到后，重复每隔2s触发timeout信号
+    timer->setSingleShot(false); // 设置为周期定时器
     connect(timer, &QTimer::timeout, this, [=]{
+        // 临时⽤⼾登录成功，删除定时器，关闭该⻚⾯
+        if(loginSuccess){
         timer->stop();
         delete timer;
         close();
+        }
     });
 
     // 启动定时器，超时时⻓为2秒
     timer->start(2000);
 
+    // 发送临时⽤⼾登录请求
+    auto dataCenter = model::DataCenter::getInstance();
+    dataCenter->loginTempUserAsync();
 }

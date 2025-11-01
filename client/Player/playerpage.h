@@ -5,6 +5,7 @@
 #include "playspeed.h"
 #include "mpv/mpvplayer.h"
 #include "bulletscreenitem.h"
+#include "./model/data.h"
 
 #include <QWidget>
 #include <QFrame>
@@ -18,7 +19,7 @@ class PlayerPage : public QWidget
     Q_OBJECT
 
 public:
-    explicit PlayerPage(QWidget *parent = nullptr);
+    explicit PlayerPage(const model::VideoInfo& videoInfo, QWidget *parent = nullptr);
     ~PlayerPage();
 
 
@@ -27,7 +28,7 @@ public:
     void mouseMoveEvent(QMouseEvent *event);
 
     // 加载视频
-    void startPlaying(const QString &videoFilePath);
+    void startPlaying();
 
     // 加载弹幕数据
     void loadBulletScreenData();
@@ -53,6 +54,9 @@ private slots:
 
     // 播放位置改变
     void onPlayPositionChanged(int64_t playTime);
+
+    // 所有视频分⽚播放结束信号槽
+    void onEndOfPlaylist();
 
     // 设置播放进度
     void setPlayProgress(double playRatio);
@@ -94,11 +98,7 @@ private:
     // 默认情况下暂停
     bool isPlay = false;
 
-    // 当前播放时⻓
-    int64_t playTime = 0;
 
-    // 当前播放视频路径
-    QString videoPath;
 
     // 弹幕相关信息
     QDialog *barrageArea = nullptr;
@@ -106,11 +106,16 @@ private:
     QFrame *middle;
     QFrame *bottom;
 
-    // 临时保存弹幕数据
-    QMap<int64_t, QList<BulletScreenInfo>> *bulletScreenLists;
 
     // 是否开启弹幕，默认弹幕开启
     bool isStartBs = true;
+
+    // 保存视频信息
+    model::VideoInfo videoInfo;
+
+    // key：视频的当前播放时间 : value: 当前播放时间下的所有弹幕数据
+    QHash<int64_t, QList<model::BarrageInfo>> bulletScreens;
+
 };
 
 #endif // PLAYERPAGE_H

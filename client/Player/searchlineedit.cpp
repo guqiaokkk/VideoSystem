@@ -51,5 +51,6 @@ SearchLineEdit::SearchLineEdit(QWidget *parent)
 
 void SearchLineEdit::searchBtnClicked()
 {
-    LOG() << "searching...";
+    // 发射信息，让Player找服务器去搜索
+    emit searchVideos(this->text());
 }
