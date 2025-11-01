@@ -256,6 +256,12 @@
       </property>
       <item>
        <widget class="QScrollArea" name="videoScroll">
+        <property name="maximumSize">
+         <size>
+          <width>16777215</width>
+          <height>680</height>
+         </size>
+        </property>
         <property name="styleSheet">
          <string notr="true">#videoScroll{ border : none; }
 

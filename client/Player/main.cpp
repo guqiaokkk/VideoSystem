@@ -2,7 +2,11 @@
 
 #include "startuppage.h"
 
+#include "./test/TestHttp.h"
+
 #include <QApplication>
+
+
 
 int main(int argc, char *argv[])
 {
@@ -15,6 +19,9 @@ int main(int argc, char *argv[])
     startupPage startuppage;
     startuppage.startup();// 开启定时器
     startuppage.exec();
+
+    //network::NetClient httpClient;
+    //TestHelloRequest(httpClient);
 
     // 显⽰主界⾯
 

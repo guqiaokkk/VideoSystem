@@ -94,6 +94,11 @@ void MpvPlayer::setCurrentPlayPosition(int64_t seconds)
     mpv_set_property_async(mpv, 0, "time-pos", MPV_FORMAT_INT64, &seconds);
 }
 
+int64_t MpvPlayer::getCurPlayTime() const
+{
+    return curPlayTime;
+}
+
 void MpvPlayer::onMpvEvents()
 {
     // 处理所有事件，直到事件队列为空
@@ -120,10 +125,42 @@ void MpvPlayer::handleMpvEvent(mpv_event *event)
         }
         if(strcmp(eventPropery->name, "time-pos") == 0)
         {
+            // 获取当前分⽚的起始时间
+            double segmentStartTime = 0;
+            mpv_get_property(mpv, "demuxer-start-time", MPV_FORMAT_DOUBLE, &segmentStartTime);
+
+            // 获取当前分⽚内的播放时间
+            double segmentCurrentTime = 0;
+            mpv_get_property(mpv, "time-pos", MPV_FORMAT_DOUBLE, &segmentCurrentTime);
+
+            // 全局时间 = 分⽚起始时间 + 分⽚内当前时间
+            curPlayTime = (int64_t)segmentStartTime + segmentCurrentTime - 1;
+
             // 播放进度发⽣改变，发出信号，让界⾯更新进度条和时间
-            int64_t seconds = *((int64_t*)eventPropery->data);
-            LOG()<<"playPositionChanged";
-            emit playPositionChanged(seconds);
+            emit playPositionChanged(curPlayTime);
+        }
+        break;
+    }
+    case MPV_EVENT_END_FILE:
+    {
+        mpv_event_end_file *endFile = (mpv_event_end_file*)event->data;
+        if(endFile->reason == MPV_END_FILE_REASON_EOF){
+            // 检查是否播放最后⼀个视频分⽚
+            int64_t playlist_pos = -1;
+            int64_t playlist_count = -1;
+            mpv_get_property(mpv, "playlist-pos", MPV_FORMAT_INT64, &playlist_pos);
+            mpv_get_property(mpv, "playlist-count", MPV_FORMAT_INT64, &playlist_count);
+
+            // 综合判断条件
+            if((playlist_count > 0) && (playlist_pos == playlist_count - 1))
+            {
+                LOG() << "所有视频分⽚播放完毕";
+                emit endOfPlaylist();
+            }
+            else
+            {
+                LOG() << "单个分⽚播放结束";
+            }
         }
         break;
     }
