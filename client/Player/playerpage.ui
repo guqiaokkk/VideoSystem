@@ -76,7 +76,7 @@ QPushButton{ border : none; }</string>
          <string notr="true">#videoTittle{ font-size : 24px; }</string>
         </property>
         <property name="text">
-         <string>TextLabel</string>
+         <string/>
         </property>
        </widget>
       </item>
@@ -297,7 +297,7 @@ QPushButton{ border : none; }</string>
             <item>
              <widget class="QLabel" name="videoDuration">
               <property name="text">
-               <string>00:00/00:10</string>
+               <string/>
               </property>
              </widget>
             </item>
@@ -573,14 +573,14 @@ border-radius : 4px; }</string>
                <string notr="true">#userNickName{ font-size : 18px; font-weight : bold; }</string>
               </property>
               <property name="text">
-               <string>用户名</string>
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
              </widget>
             </item>
             <item>
              <widget class="QLabel" name="loadupTime">
               <property name="text">
-               <string>11.4号  5:14:16</string>
+               <string/>
               </property>
              </widget>
             </item>
@@ -640,7 +640,7 @@ border-radius : 4px; }</string>
             <item>
              <widget class="QLabel" name="playNum">
               <property name="text">
-               <string>11.45万</string>
+               <string/>
               </property>
              </widget>
             </item>
@@ -691,7 +691,7 @@ border-radius : 4px; }</string>
             <item>
              <widget class="QLabel" name="likeNum">
               <property name="text">
-               <string>14万</string>
+               <string>1234</string>
               </property>
              </widget>
             </item>
@@ -725,7 +725,7 @@ border-radius : 4px; }</string>
             <string notr="true">#videoDesc{ font-size : 14px; }</string>
            </property>
            <property name="text">
-            <string>我会一直盯着你我会一直盯着你我会一直盯着你我会一直盯着你我会一直盯着你我会一直盯着你我会一直盯着你我会一直盯着你我会一直盯着你我会一直盯着你我会一直盯着你我会一直盯着你我会一直盯着你我会一直盯着你我会一直盯着你我会一直盯着你我会一直盯着你我会一直盯着你我会一直盯着你我会一直盯着你我会一直盯着你我会一直盯着你我会一直盯着你我会一直盯着你我会一直盯着你我会一直盯着你我会一直盯着你我会一直盯着你我会一直盯着你我会一直盯着你我会一直盯着你我会一直盯着你我会一直盯着你</string>
+            <string/>
            </property>
            <property name="wordWrap">
             <bool>true</bool>

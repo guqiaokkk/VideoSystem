@@ -361,7 +361,126 @@ void NetClient::getVideoBarrage(const QString &videoId)
         // 发射信号，通知界⾯更视频显⽰
         emit dataCenter->getVideoBarrageDone(videoId);
 
-        LOG() << "getBarrage请求结束，弹幕获取成功, requestId: " << resultObj["requestId"].toString();;
+        LOG() << "getBarrage请求结束，弹幕获取成功, requestId: " << respObj["requestId"].toString();;
+    });
+}
+
+void NetClient::setPlayNumber(const QString &videoId)
+{
+    // 1. 构造请求
+    QJsonObject reqBody;
+    reqBody["sessionId"] = dataCenter->getLogingSessionId();
+    reqBody["videoId"] = videoId;
+
+
+    // 2. 发送请求
+    QNetworkReply *httpReply = sendHttpRequest("/HttpService/getBarrage", reqBody);
+
+    // 3. 异步处理响应
+    connect(httpReply, &QNetworkReply::finished, this, [=]()mutable{
+        // 1. 解析响应
+        bool ok = false;
+        QString reason;
+        QJsonObject respObj = handleHttpResponse(httpReply, ok, reason);
+        // 2. 判定响应是否出错
+        if(!ok){
+            LOG()<<"setPlay 请求出错，reason = "<<reason;
+            return;
+        }
+
+        LOG() << "setPlay请求结束，弹幕获取成功, requestId: " << respObj["requestId"].toString();;
+    });
+}
+
+void NetClient::getIsLikeVideo(const QString &videoId)
+{
+    // 1. 构造请求
+    QJsonObject reqBody;
+    reqBody["sessionId"] = dataCenter->getLogingSessionId();
+    reqBody["videoId"] = videoId;
+
+
+    // 2. 发送请求
+    QNetworkReply *httpReply = sendHttpRequest("/HttpService/judgeLike", reqBody);
+
+    // 3. 异步处理响应
+    connect(httpReply, &QNetworkReply::finished, this, [=]()mutable{
+        // 1. 解析响应
+        bool ok = false;
+        QString reason;
+        QJsonObject respObj = handleHttpResponse(httpReply, ok, reason);
+        // 2. 判定响应是否出错
+        if(!ok){
+            LOG()<<"judgeLike 请求出错，reason = "<<reason;
+            return;
+        }
+
+        // 3. 发送信号通知界⾯更新
+        //  解析响应体中服务端交给客户端的具体数据
+        QJsonObject resultObj = respObj["data"].toObject();
+
+        // 发射信号，通知界⾯更视频显⽰
+        emit dataCenter->getIsLikeVideoDone(videoId, resultObj["isLike"].toBool());
+        LOG() << "judgeLike 成功, requestId=" << respObj["requestId"].toString();
+
+    });
+}
+
+void NetClient::setLikeNumber(const QString &videoId)
+{
+    // 1. 构造请求
+    QJsonObject reqBody;
+    reqBody["sessionId"] = dataCenter->getLogingSessionId();
+    reqBody["videoId"] = videoId;
+
+
+    // 2. 发送请求
+    QNetworkReply *httpReply = sendHttpRequest("/HttpService/setLike", reqBody);
+
+    // 3. 异步处理响应
+    connect(httpReply, &QNetworkReply::finished, this, [=]()mutable{
+        // 1. 解析响应
+        bool ok = false;
+        QString reason;
+        QJsonObject respObj = handleHttpResponse(httpReply, ok, reason);
+        // 2. 判定响应是否出错
+        if(!ok){
+            LOG()<<"setLike 请求出错，reason = "<<reason;
+            return;
+        }
+
+        LOG() << "setLike请求结束，点赞成功, requestId: " << respObj["requestId"].toString();
+    });
+}
+
+void NetClient::loadupBarrages(const QString &videoId, const model::BarrageInfo &barrageInfo)
+{
+    // 1. 构造请求
+    QJsonObject reqBody;
+    reqBody["sessionId"] = dataCenter->getLogingSessionId();
+    reqBody["videoId"] = videoId;
+
+    QJsonObject barrageObj;
+    barrageObj["barrageContent"] = barrageInfo.text;
+    barrageObj["barrageTime"] = barrageInfo.playTime;
+    reqBody["barrageInfo"] = barrageObj;
+
+    // 2. 发送请求
+    QNetworkReply *httpReply = sendHttpRequest("/HttpService/newBarrage", reqBody);
+
+    // 3. 异步处理响应
+    connect(httpReply, &QNetworkReply::finished, this, [=]()mutable{
+        // 1. 解析响应
+        bool ok = false;
+        QString reason;
+        QJsonObject respObj = handleHttpResponse(httpReply, ok, reason);
+        // 2. 判定响应是否出错
+        if(!ok){
+            LOG()<<"newBarrage 请求出错，reason = "<<reason;
+            return;
+        }
+
+        LOG() << "newBarrage请求结束，弹幕上传成功, requestId: " << respObj["requestId"].toString();
     });
 }
 

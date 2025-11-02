@@ -24,6 +24,9 @@ PlayerPage::PlayerPage(const model::VideoInfo& videoInfo, QWidget *parent)
 
     //initBarrageArea();
 
+    // 更新播放数
+    likeCount = videoInfo.likeCount;
+
     mpvPlayer = new MpvPlayer(this, ui->screen);
 
     setWindowFlag(Qt::FramelessWindowHint);
@@ -40,7 +43,7 @@ PlayerPage::PlayerPage(const model::VideoInfo& videoInfo, QWidget *parent)
 
 
     connect(ui->minBtn, &QPushButton::clicked, this, &QWidget::showMinimized);
-    connect(ui->quitBtn, &QPushButton::clicked, this, &QWidget::close);
+    connect(ui->quitBtn, &QPushButton::clicked, this, &PlayerPage::onQuitBtnClicked);
 
     // 显⽰⾳量调节窗⼝
     connect(ui->volumeBtn, &QPushButton::clicked, this, &PlayerPage::onVolumeBtnClicked);
@@ -75,6 +78,24 @@ PlayerPage::PlayerPage(const model::VideoInfo& videoInfo, QWidget *parent)
     // 发送弹幕
     connect(ui->bulletScreenText, &BarrageEdit::sendBulletScreen, this, &PlayerPage::onSendBulletScreenBtnClicked);
 
+    // 该视频是否被点赞过：需要从服务器拿到该视频被当前⽤⼾点赞信息, 根据是否点赞过设置界⾯点赞按钮的样式
+    auto dataCenter = model::DataCenter::getInstance();
+    connect(dataCenter, &model::DataCenter::getIsLikeVideoDone, this, [=](const QString &videoId, bool isLike){
+        if(videoId != videoInfo.videoId){
+            return;
+        }
+        if(isLike)
+        {
+            ui->likeImgBtn->setStyleSheet("border-image : url(:/images/PlayPage/dianzan.png)");
+        }
+        else
+        {
+             ui->likeImgBtn->setStyleSheet("border-image : url(:/images/PlayPage/quxiaodianzan.png)");
+        }
+        this->isLike = isLike;
+    });
+
+    dataCenter->getIsLikeVideoAsync(videoInfo.videoId);
 }
 
 PlayerPage::~PlayerPage()
@@ -149,6 +170,7 @@ void PlayerPage::startPlaying()
     // 加载弹幕数据
     loadBulletScreenData();
 
+    updataVideoInfoUI();
 
     ui->videoSlider->setPlayStep(0);
 
@@ -160,6 +182,9 @@ void PlayerPage::startPlaying()
 
     // 视频加载成功之后会⽴⻢播放，初始时先将其设置为暂停状态，当⽤⼾点击播放按钮之后再让 视频播放起来
     mpvPlayer->pause();
+
+    // 点击播放时需要更新播放次数
+    isUpdataPlayNum = false;
 }
 
 void PlayerPage::loadBulletScreenData()
@@ -167,6 +192,67 @@ void PlayerPage::loadBulletScreenData()
     // 获取弹幕数据
     auto dataCenter = model::DataCenter::getInstance();
     bulletScreens = dataCenter->getBarragesData();
+}
+
+void PlayerPage::updataVideoInfoUI()
+{
+    // 设置视频标题
+    ui->videoTittle->setText(videoInfo.videoTitle);
+
+    // 设置⽤⼾昵称
+    ui->userNickName->setText(videoInfo.nickName);
+
+    // 设置视频上传时间
+    ui->loadupTime->setText(videoInfo.videoUpTime);
+
+    // 设置点赞数量
+    ui->likeNum->setText(intToString(videoInfo.likeCount));
+
+    // 设置播放数量
+    ui->playNum->setText(intToString(videoInfo.playCount));
+
+    // 设置视频播放时⻓
+    QString curPlayTime = secondToTime(0);
+    QString totalTime = secondToTime(videoInfo.videoDuration);
+    ui->videoDuration->setText(curPlayTime + "/" + totalTime);
+
+    // 修改视频描述
+    ui->videoDesc->setText(videoInfo.videoDesc);
+}
+
+
+void PlayerPage::setUserIcon(QPixmap &userImg)
+{
+    // 设置⽤⼾图像
+    ui->userAvatar->setIcon(QIcon(userImg));
+}
+
+void PlayerPage::updataPlayCount()
+{
+    // 如果播放次数已经更新了，则不重复更新
+    if(isUpdataPlayNum){
+        return;
+    }
+
+    // 更新界⾯上播放次数
+    videoInfo.playCount++;
+    ui->playNum->setText(intToString(videoInfo.playCount));
+
+    // 更新DataCenter中视频列表中播放数: ⾸⻚视频列表 和 我的⻚⾯视频列表
+    auto dataCenter = model::DataCenter::getInstance();
+
+    // ⾸⻚视频列表
+    auto videoList = dataCenter->getVideoListPtr();
+    videoList->incrementPlayNum(videoInfo.videoId);
+
+    // 我的⻚⾯视频列表--【待处理】
+
+    // 更新服务器上该视频的播放数
+    dataCenter->setPlayNumberAsync(videoInfo.videoId);
+    isUpdataPlayNum = true;
+
+    // 通知VideoBox更新VideoBox界⾯上的播放数
+    emit increasePlayCount(videoInfo.videoId);
 }
 
 void PlayerPage::onSpeedBtnClicked()
@@ -178,9 +264,25 @@ void PlayerPage::onSpeedBtnClicked()
 
 void PlayerPage::onLikeImageBtnClcked()
 {
-    // 检测⽤⼾是否登录，登录时才能点赞
-    Login* login = new Login();
-    delete login;
+    // 检测当前⽤⼾视频为临时⽤⼾，临时⽤⼾需要先登录然后才能点赞 -todo
+    if(false){
+        Login* login = new Login();
+        Toast::showMessage("先登录，登录完成之后才能点赞", login);;
+    }
+
+    isLike = !isLike;
+    // 根据反转后的新状态来更新UI和点赞数
+    if(isLike)
+    {
+        likeCount++;
+        ui->likeImgBtn->setStyleSheet("border-image:url(:/images/PlayPage/dianzan.png)");
+    }
+    else
+    {
+        likeCount--;
+        ui->likeImgBtn->setStyleSheet("border-image:url(:/images/PlayPage/quxiaodianzan.png)");
+    }
+    ui->likeNum->setText(intToString(likeCount));
 }
 
 void PlayerPage::onplayBtnClicked()
@@ -199,6 +301,8 @@ void PlayerPage::onplayBtnClicked()
         mpvPlayer->pause();
     }
 
+    // 只要⽤⼾点击播放了视频，就更新播放次数
+    updataPlayCount();
 }
 
 void PlayerPage::onPlaySpeedChanged(double speed)
@@ -391,6 +495,40 @@ void PlayerPage::onSendBulletScreenBtnClicked(const QString &text)
     int duration = 10000 * top->width() / (double)(30*18 + 1450);   //  10s / (30*18 + 1450)  =  duration / 它对应的起始位置（此处是top->width)
     bs->setBulletScreenAnimation(top->width(), duration);
     bs->startAnimation();
+
+    // 将弹幕数据发送到服务器
+    model::BarrageInfo barrageInfo;
+    barrageInfo.playTime = mpvPlayer->getCurPlayTime();
+    barrageInfo.text = text;
+    barrageInfo.userId = videoInfo.userId;
+
+    auto dataCenter = model::DataCenter::getInstance();
+    dataCenter->loadupBarragesAsync(videoInfo.videoId, barrageInfo);
+}
+
+void PlayerPage::onQuitBtnClicked()
+{
+    // 如果⽤⼾确实登录，并且已经点赞，将点赞数据上传⾄服务器. 临时⽤⼾不允许点赞-todo
+    auto dataCenter = model::DataCenter::getInstance();
+    if(likeCount != videoInfo.likeCount)
+    {
+        // 视频被点赞或者取消点赞了,同步服务器
+        dataCenter->setLikeNumberAsync(videoInfo.videoId);
+
+        // 设置DataCenter中视频点赞数据
+        // videoInfo指向本来就是DataCenter中的videoId的视频信息，此处不需要单独修改
+        // 更新⾸⻚视频列表 和 我的视频列表
+        auto videoListPtr = dataCenter->getVideoListPtr();
+        videoListPtr->updateLikeCount(videoInfo.videoId, likeCount);
+        videoInfo.likeCount = likeCount;
+
+        //myselfPage --- todo
+
+        // 通知videoBox修改点赞信息
+        emit updataLikeNum(likeCount);
+    }
+    this->close();
+    this->deleteLater();
 }
 
 

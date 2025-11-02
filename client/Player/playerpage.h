@@ -33,6 +33,14 @@ public:
     // 加载弹幕数据
     void loadBulletScreenData();
 
+    // 设置视频信息
+    void updataVideoInfoUI();
+
+    // 设置⽤⼾头像
+    void setUserIcon(QPixmap &userImg);
+
+    // 更新播放次数
+    void updataPlayCount();
 
 private slots:
     // ⾳量调节
@@ -67,6 +75,8 @@ private slots:
     // 发送弹幕
     void onSendBulletScreenBtnClicked(const QString &text);
 
+    void onQuitBtnClicked();
+
 private:
     // 移动窗⼝控件(音量和倍速)
     void moveWindows(const QPoint &point);
@@ -79,6 +89,13 @@ private:
 
     // 显⽰弹幕
     void showBulletScreen();
+
+signals:
+    // 新增播放数
+    void increasePlayCount(const QString &videoId);
+
+    // 更新点赞信号
+    void updataLikeNum(int64_t likeCount);
 
 private:
     Ui::PlayerPage *ui;
@@ -116,6 +133,14 @@ private:
     // key：视频的当前播放时间 : value: 当前播放时间下的所有弹幕数据
     QHash<int64_t, QList<model::BarrageInfo>> bulletScreens;
 
+    // 是否更新播放次数
+    bool isUpdataPlayNum = false;
+
+    // 检测是否是否被点赞过，默认没有点赞过
+    bool isLike = false;
+
+    // 标记点赞数
+    int64_t likeCount;
 };
 
 #endif // PLAYERPAGE_H

@@ -71,6 +71,18 @@ public:
     // 获取弹幕信息
     QHash<int64_t, QList<BarrageInfo>> &getBarragesData();
 
+    // 更新播放次数
+    void setPlayNumberAsync(const QString &videoId);
+
+    // 检测⽤⼾是否点赞某视频
+    void getIsLikeVideoAsync(const QString &videoId);
+
+    // 更新点赞
+    void setLikeNumberAsync(const QString &videoId);
+
+    // 新增弹幕
+    void loadupBarragesAsync(const QString &videoId, const BarrageInfo &barrageInfo);
+
 signals:
     void helloDone();
 
@@ -99,6 +111,11 @@ signals:
 
     // 获取弹幕
     void getVideoBarrageDone(const QString &videoId);
+
+    // 检测是否对视频点赞成功
+    void getIsLikeVideoDone(const QString &videoId, bool isLike);
+
+
 
 private:
     static DataCenter *instance;

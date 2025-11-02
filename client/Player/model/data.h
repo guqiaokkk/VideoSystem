@@ -108,6 +108,12 @@ public:
     // 获取排序后的视频列表
     const QList<VideoInfo> &getVideoList() const;
 
+    // 增加播放量
+    void incrementPlayNum(const QString &videoId);
+
+    //更新点赞数
+    void updateLikeCount(const QString &videoId, int64_t likeCount);
+
     // 将列表中的所有视频清空
     void clearVideoList();
 
