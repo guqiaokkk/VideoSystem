@@ -161,6 +161,26 @@ QHash<int64_t, QList<BarrageInfo> > &DataCenter::getBarragesData()
     return barrages;
 }
 
+void DataCenter::setPlayNumberAsync(const QString &videoId)
+{
+    httpClient.setPlayNumber(videoId);
+}
+
+void DataCenter::getIsLikeVideoAsync(const QString &videoId)
+{
+    httpClient.getIsLikeVideo(videoId);
+}
+
+void DataCenter::setLikeNumberAsync(const QString &videoId)
+{
+    httpClient.setLikeNumber(videoId);
+}
+
+void DataCenter::loadupBarragesAsync(const QString &videoId, const BarrageInfo &barrageInfo)
+{
+    httpClient.loadupBarrages(videoId, barrageInfo);
+}
+
 
 
 }// end model

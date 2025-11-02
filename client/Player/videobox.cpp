@@ -22,7 +22,6 @@ VideoBox::VideoBox(model::VideoInfo videoInfo, QWidget *parent)
     // 设置视频信息到界⾯
     updataVideoInfoUI();
 
-    playPage = new PlayerPage(videoInfo);
 
     // 获取视频封⾯图⽚成功
     auto dataCenter = model::DataCenter::getInstance();
@@ -33,6 +32,8 @@ VideoBox::VideoBox(model::VideoInfo videoInfo, QWidget *parent)
 
     // 获取弹幕数据成功
     connect(dataCenter, &model::DataCenter::getVideoBarrageDone, this, &VideoBox::getVideoBarrageSuccess);
+
+
 }
 
 VideoBox::~VideoBox()
@@ -174,6 +175,11 @@ void VideoBox::getVideoBarrageSuccess(const QString &videoId)
         return;
     }
 
+    playPage = new PlayerPage(videoInfo);
+
+    // 设置⽤⼾头像
+    playPage->setUserIcon(userAvatar);
+
     playPage->show();
     // 从服务器下载M3U8⽂件并播放
     //dataCenter->downloadVideoAsync(videoInfo.videoFileId);
@@ -187,4 +193,16 @@ void VideoBox::getVideoBarrageSuccess(const QString &videoId)
 
     // 直接播放视频即可，mpv⾃⼰会去服务器下载m3u8⽂件
     playPage->startPlaying();
+
+    //更新播放数
+    connect(playPage, &PlayerPage::increasePlayCount, this, [=](){
+        this->videoInfo.playCount++;
+        ui->playNum->setText(intToString(videoInfo.playCount));
+    });
+
+    // 点赞数的信号连接
+    connect(playPage, &PlayerPage::updataLikeNum, this, [=](int64_t likeCount){
+        this->videoInfo.likeCount = likeCount;
+        ui->likeNum->setText(intToString(this->videoInfo.likeCount));
+    });
 }

@@ -128,6 +128,30 @@ const QList<VideoInfo> &VideoList::getVideoList() const
     return videoInfos;
 }
 
+void VideoList::incrementPlayNum(const QString &videoId)
+{
+    for(auto &videoInfo : videoInfos)
+    {
+        if(videoInfo.videoId == videoId)
+        {
+            videoInfo.playCount++;
+            return;
+        }
+    }
+}
+
+void VideoList::updateLikeCount(const QString &videoId, int64_t likeCount)
+{
+    for(auto &videoInfo : videoInfos)
+    {
+        if(videoInfo.videoId == videoId)
+        {
+            videoInfo.likeCount = likeCount;
+            return;
+        }
+    }
+}
+
 void VideoList::clearVideoList()
 {
     videoInfos.clear();

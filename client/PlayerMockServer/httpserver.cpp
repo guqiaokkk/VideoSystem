@@ -64,7 +64,7 @@ bool HttpServer::init()
     buildResponseData();
 
     // 绑定ip地址和端⼝号
-    int ret = httpServer.listen(QHostAddress::Any, 8000);
+    int64_t ret = httpServer.listen(QHostAddress::Any, 8000);
 
     // 配置路由
     httpServer.route("/hello", [=](const QHttpServerRequest &req){
@@ -114,6 +114,26 @@ bool HttpServer::init()
     // 获取弹幕
     httpServer.route("/HttpService/getBarrage", [=](const QHttpServerRequest &req){
         return this->getBarrage(req);
+    });
+
+    // 更新播放次数
+    httpServer.route("/HttpService/setPlay", [=](const QHttpServerRequest &req){
+        return this->setPlay(req);
+    });
+
+    // 检测是否点赞
+    httpServer.route("/HttpService/judgeLike", [=](const QHttpServerRequest &req){
+        return this->judgeLike(req);
+    });
+
+    // 更新点赞
+    httpServer.route("/HttpService/setLike", [=](const QHttpServerRequest& req) {
+        return this->setLike(req);
+    });
+
+    // 新增弹幕
+    httpServer.route("/HttpService/newBarrage", [=](const QHttpServerRequest& req) {
+        return this->newBarrage(req);
     });
 
     return ret == 8000;
@@ -218,7 +238,7 @@ QHttpServerResponse HttpServer::allVideoList(const QHttpServerRequest &req)
         videoJsonObj["userAvatarId"] = QString::number(resourceId++);
         videoJsonObj["photoFileId"] = QString::number(resourceId++);
         videoJsonObj["videoFileId"] = QString::number(resourceId++);
-        videoJsonObj["likeCount"] = 1234; videoJsonObj["playCount"] = 23456;
+        videoJsonObj["likeCount"] = 1234; videoJsonObj["playCount"] = 3456;
         videoJsonObj["videoSize"] = 10240;
         videoJsonObj["videoDesc"] = "月华似练，笼中的羽翼被夜色收紧；花飞风追，少女的心愿随歌谣入梦~";
         videoJsonObj["videoTitle"] = "第一次去日本一个人怎么玩！七天自由行，好吃又好逛！";
@@ -270,7 +290,7 @@ QHttpServerResponse HttpServer::typeVideoList(const QHttpServerRequest &req)
         videoJsonObj["userAvatarId"] = QString::number(resourceId++);
         videoJsonObj["photoFileId"] = QString::number(resourceId++);
         videoJsonObj["videoFileId"] = QString::number(resourceId++);
-        videoJsonObj["likeCount"] = 1234; videoJsonObj["playCount"] = 23456;
+        videoJsonObj["likeCount"] = 1234; videoJsonObj["playCount"] = 3456;
         videoJsonObj["videoSize"] = 10240;
         videoJsonObj["videoDesc"] = "月华似练，笼中的羽翼被夜色收紧；花飞风追，少女的心愿随歌谣入梦~";
         videoJsonObj["videoTitle"] = "第一次去日本一个人怎么玩！七天自由行，好吃又好逛！";
@@ -321,7 +341,7 @@ QHttpServerResponse HttpServer::tagVideoList(const QHttpServerRequest &req)
         videoJsonObj["userAvatarId"] = QString::number(resourceId++);
         videoJsonObj["photoFileId"] = QString::number(resourceId++);
         videoJsonObj["videoFileId"] = QString::number(resourceId++);
-        videoJsonObj["likeCount"] = 1234; videoJsonObj["playCount"] = 23456;
+        videoJsonObj["likeCount"] = 1234; videoJsonObj["playCount"] = 3456;
         videoJsonObj["videoSize"] = 10240;
         videoJsonObj["videoDesc"] = "月华似练，笼中的羽翼被夜色收紧；花飞风追，少女的心愿随歌谣入梦~";
         videoJsonObj["videoTitle"] = "第一次去日本一个人怎么玩！七天自由行，好吃又好逛！";
@@ -372,7 +392,7 @@ QHttpServerResponse HttpServer::keyVideoList(const QHttpServerRequest &req)
         videoJsonObj["userAvatarId"] = QString::number(resourceId++);
         videoJsonObj["photoFileId"] = QString::number(resourceId++);
         videoJsonObj["videoFileId"] = QString::number(resourceId++);
-        videoJsonObj["likeCount"] = 1234; videoJsonObj["playCount"] = 23456;
+        videoJsonObj["likeCount"] = 1234; videoJsonObj["playCount"] = 3456;
         videoJsonObj["videoSize"] = 10240;
         videoJsonObj["videoDesc"] = "月华似练，笼中的羽翼被夜色收紧；花飞风追，少女的心愿随歌谣入梦~";
         videoJsonObj["videoTitle"] = "第一次去日本一个人怎么玩！七天自由行，好吃又好逛！";
@@ -512,6 +532,118 @@ QHttpServerResponse HttpServer::getBarrage(const QHttpServerRequest &req)
     jsonBody["barrageList"] = barrageArray;
 
     jsonResp["data"] = jsonBody;
+    jsonResp["requestId"] = jsonReq["requestId"].toString();
+    jsonResp["errorCode"] = 0;
+    jsonResp["errorMsg"] = "";
+
+    //  返回响应
+    QJsonDocument docResp;
+    docResp.setObject(jsonResp);
+
+    // 构造 HTTP 响应
+    QHttpServerResponse httpResp(docResp.toJson(), QHttpServerResponse::StatusCode::Ok);
+    httpResp.setHeader("Content-Type", "application/json; charset = utf-8");
+    return httpResp;
+}
+
+QHttpServerResponse HttpServer::setPlay(const QHttpServerRequest &req)
+{
+    QJsonDocument docReq = QJsonDocument::fromJson(req.body());
+    const QJsonObject &jsonReq = docReq.object();
+
+    LOG() << "[setPlay] 收到 setPlay 请求, requestId = " <<jsonReq["requestId"].toString();
+
+
+    QString videoId = jsonReq["videoId"].toString();
+
+    QJsonObject jsonResp;
+
+    jsonResp["requestId"] = jsonReq["requestId"].toString();
+    jsonResp["errorCode"] = 0;
+    jsonResp["errorMsg"] = "";
+
+    //  返回响应
+    QJsonDocument docResp;
+    docResp.setObject(jsonResp);
+
+    // 构造 HTTP 响应
+    QHttpServerResponse httpResp(docResp.toJson(), QHttpServerResponse::StatusCode::Ok);
+    httpResp.setHeader("Content-Type", "application/json; charset = utf-8");
+    return httpResp;
+}
+
+QHttpServerResponse HttpServer::judgeLike(const QHttpServerRequest &req)
+{
+    QJsonDocument docReq = QJsonDocument::fromJson(req.body());
+    const QJsonObject &jsonReq = docReq.object();
+
+    LOG() << "[judgeLike] 收到 judgeLike 请求, requestId = " <<jsonReq["requestId"].toString();
+
+
+    QJsonObject jsonResp;
+    QJsonObject jsonBody;
+
+    jsonResp["requestId"] = jsonReq["requestId"].toString();
+    jsonResp["errorCode"] = 0;
+    jsonResp["errorMsg"] = "";
+
+    jsonBody["isLike"] = true;
+    jsonResp["data"] = jsonBody;
+
+    //  返回响应
+    QJsonDocument docResp;
+    docResp.setObject(jsonResp);
+
+    // 构造 HTTP 响应
+    QHttpServerResponse httpResp(docResp.toJson(), QHttpServerResponse::StatusCode::Ok);
+    httpResp.setHeader("Content-Type", "application/json; charset = utf-8");
+    return httpResp;
+}
+
+QHttpServerResponse HttpServer::setLike(const QHttpServerRequest &req)
+{
+    QJsonDocument docReq = QJsonDocument::fromJson(req.body());
+    const QJsonObject &jsonReq = docReq.object();
+
+    LOG() << "[setLike] 收到 setLike 请求, requestId = " <<jsonReq["requestId"].toString();
+
+
+    QString videoId = jsonReq["videoId"].toString();
+
+    QJsonObject jsonResp;
+
+    jsonResp["requestId"] = jsonReq["requestId"].toString();
+    jsonResp["errorCode"] = 0;
+    jsonResp["errorMsg"] = "";
+
+    //  返回响应
+    QJsonDocument docResp;
+    docResp.setObject(jsonResp);
+
+    // 构造 HTTP 响应
+    QHttpServerResponse httpResp(docResp.toJson(), QHttpServerResponse::StatusCode::Ok);
+    httpResp.setHeader("Content-Type", "application/json; charset = utf-8");
+    return httpResp;
+}
+
+QHttpServerResponse HttpServer::newBarrage(const QHttpServerRequest &req)
+{
+    QJsonDocument docReq = QJsonDocument::fromJson(req.body());
+    const QJsonObject &jsonReq = docReq.object();
+
+    LOG() << "[newBarrage] 收到 newBarrage 请求, requestId = " <<jsonReq["requestId"].toString();
+
+    QString videoId = jsonReq["videoId"].toString();
+
+    // 解析出弹幕信息
+    BarrageInfo barrageInfo;
+    QJsonObject barrageObj = jsonReq["barrageInfo"].toObject();
+    barrageInfo.playTime = barrageObj["barrageTime"].toInteger();
+    barrageInfo.text = barrageObj["barrageContent"].toString();
+    LOG() << "视频" << videoId << "弹幕" << barrageInfo.playTime <<barrageInfo.text;
+
+    QJsonObject jsonResp;
+
     jsonResp["requestId"] = jsonReq["requestId"].toString();
     jsonResp["errorCode"] = 0;
     jsonResp["errorMsg"] = "";
