@@ -1,11 +1,16 @@
 #include "myselfwidget.h"
 #include "ui_myselfwidget.h"
-
+#include "videobox.h"
 #include "modifymyselfdialog.h"
 #include "util.h"
 #include "player.h"
+#include "toast.h"
+
+#include "./model/data.h"
+#include "./model/datacenter.h"
 
 #include <QFileDialog>
+#include <QScrollBar>
 
 MyselfWidget::MyselfWidget(QWidget *parent)
     : QWidget(parent)
@@ -15,17 +20,113 @@ MyselfWidget::MyselfWidget(QWidget *parent)
 
     initUI();
 
-    // 头像按钮绑定槽函数
-    connect(ui->avatarBtn, &QPushButton::clicked, this, &MyselfWidget::uploadAvatarBtnClicked);
+    connectSignalAndSlots();
 
-    // 上传视频的绑定
-    connect(ui->uploadVideoBtn, &QPushButton::clicked, this, &MyselfWidget::uploadViewBtnClicked);
 }
 
 MyselfWidget::~MyselfWidget()
 {
     delete ui;
 }
+
+
+//////////// myself////////////
+void MyselfWidget::getMyselfInfo()
+{
+    auto dataCenter = model::DataCenter::getInstance();
+    if(dataCenter->getMyselfInfo() == nullptr)
+    {
+        // 没有数据, 先请求数据
+        dataCenter->getMyselfInfoAsync();
+    }
+    else
+    {
+        getMyselfInfoDone();
+    }
+}
+
+void MyselfWidget::loadMyself()
+{
+    // 加载个⼈信息
+    getMyselfInfo();
+
+    // 加载个⼈视频列表
+    // "" : 表⽰获取当前⽤⼾视频列表 1表⽰从获取第1⻚
+    userId = "";
+    getUserVideoList("", 1);
+
+    // 切换到个⼈模式，即允许点击⽤⼾头像按钮修改个⼈头像
+    ui->avatarBtn->changeMode(true);
+    ui->avatarBtn->setEnabled(true);
+}
+
+//////////// otherself////////////
+// 获取其他⽤⼾信息
+void MyselfWidget::getOtherUserInfo(const QString &otherUserId)
+{
+    // 直接从⽹络获取, 不读取本地数据. 每次加载的其他⽤⼾可能都是不同的.
+    auto dataCenter = model::DataCenter::getInstance();
+    dataCenter->getOtherUserInfoAsync(otherUserId);
+}
+
+void MyselfWidget::loadOtherUser(const QString &otherUserId)
+{
+    // 加载⽤⼾信息
+    getOtherUserInfo(otherUserId);
+
+    // 加载⽤⼾视频列表
+    userId = otherUserId;
+    getUserVideoList(otherUserId, 1);
+
+    // 切换到其他⽤⼾模式
+    ui->avatarBtn->changeMode(false);
+    ui->avatarBtn->setEnabled(false); // 其他⽤⼾禁⽌修改头像
+}
+
+// 获取其他⽤⼾信息完成
+void MyselfWidget::getOtherUserInfoDone()
+{
+    // 1. 界⾯控件显⽰隐藏处理
+    // 默认情况是临时⽤⼾，所有显⽰信息控件已经隐藏了，此处需要重新显⽰下
+    hideWidget(false);
+
+    // 隐藏控件，禁⽌修改头像和点击昵称登录
+    ui->settingBtn->hide();
+    ui->quitBtn->hide();
+    ui->uploadVideoBtn->hide();
+    ui->avatarBtn->setEnabled(false);
+    ui->nicknameBtn->setEnabled(false);
+
+    // 2. 获取⽤⼾数据
+    auto dataCenter = model::DataCenter::getInstance();
+    auto otherUserInfo = dataCenter->getOtherUserInfo();
+
+    // 3. 设置界⾯
+    // 设置昵称、关注数、粉丝数、点赞数、播放数
+    ui->nicknameBtn->setText(otherUserInfo->nickname);
+    ui->attentionCountLabel->setText(intToString2(otherUserInfo->followedCount));
+    ui->fansCountLabel->setText(intToString2(otherUserInfo->followerCount));
+    ui->likeCountLabel->setText(intToString2(otherUserInfo->likeCount));
+    ui->playCountLabel->setText(intToString2(otherUserInfo->playCount));
+
+    // 设定关注按钮的状态, 并显⽰.
+
+
+    ui->myVideoLabel->setText("TA的视频");
+
+    // 4. 设置头像
+    if(otherUserInfo->avatarFileId.isEmpty())
+    {
+        // 该⽤⼾之前未上传头像，设置默认头像
+        ui->avatarBtn->setIcon(QIcon(":/images/myself/default_avatar.png"));
+    }
+    else
+    {
+        dataCenter->downloadPhotoAsync(otherUserInfo->avatarFileId);
+    }
+}
+
+
 
 void MyselfWidget::initUI()
 {
@@ -37,6 +138,14 @@ void MyselfWidget::initUI()
 
 void MyselfWidget::uploadAvatarBtnClicked()
 {
+    // 0. 如果⽤⼾没有登陆，先要检测⽤⼾是否登陆
+    auto dataCenter = model::DataCenter::getInstance();
+    if(dataCenter->getMyselfInfo()->isTempUser())
+    {
+        Toast::showMessage("请先登陆，然后修改⽤⼾头像");
+        return;
+    }
+
     // 1.弹出对话框, 选择⽂件
     QString filename = QFileDialog::getOpenFileName(nullptr, "选择头像", "", "Image Files (*.jpg *.png)");
     if(filename.isEmpty()){
@@ -55,6 +164,9 @@ void MyselfWidget::uploadAvatarBtnClicked()
     // 3.通过makeIcon将fileData转换为QIcon，并设为头像
     // 按钮的尺⼨为60*60，因此圆形按钮的半径为按钮⻓或宽的⼀半
     ui->avatarBtn->setIcon(makeIcon(fileData, ui->avatarBtn->width()/2));
+
+    // 4. 上传图⽚⽂件到服务器
+    dataCenter->uploadPhotoAsync(fileData);
 }
 
 void MyselfWidget::settingBtnClicked()
@@ -83,3 +195,266 @@ void MyselfWidget::uploadViewBtnClicked()
         emit switchUploadVideoPage(UploadPage);
     }
 }
+
+void MyselfWidget::connectSignalAndSlots()
+{
+    // 头像按钮绑定槽函数
+    connect(ui->avatarBtn, &QPushButton::clicked, this, &MyselfWidget::uploadAvatarBtnClicked);
+
+    // 上传视频的绑定
+    connect(ui->uploadVideoBtn, &QPushButton::clicked, this, &MyselfWidget::uploadViewBtnClicked);
+
+    // 设置按钮点击
+    connect(ui->settingBtn, &QPushButton::clicked, this, &MyselfWidget::settingBtnClicked);
+
+    // 获取当前⽤⼾信息成功
+    auto dataCenter = model::DataCenter::getInstance();
+    connect(dataCenter, &model::DataCenter::getMyselfInfoDone, this, &MyselfWidget::getMyselfInfoDone);
+
+    // 获取⽤⼾头像信号槽绑定
+    connect(dataCenter, &model::DataCenter::downloadPhotoDone, this, &MyselfWidget::getAvatarDone);
+
+    // 上传图⽚
+    connect(dataCenter, &model::DataCenter::uploadPhotoDone, this, &MyselfWidget::uploadAvatarDone1);
+
+    // 修改⽤⼾头像Id成功
+    connect(dataCenter, &model::DataCenter::setAvatarDone, this, &MyselfWidget::uploadAvatarDone2);
+
+    // 获取视频列表
+    connect(dataCenter, &model::DataCenter::getUserListVideoDone, this, &MyselfWidget::getUserVideoListDone);
+
+    // 垂直滚动条滚动
+    connect(ui->scrollArea->verticalScrollBar(), &QScrollBar::valueChanged, this, &MyselfWidget::onScrollAreaValueChanged);
+
+    // 视频删除成功信号槽函数绑定
+    connect(dataCenter, &model::DataCenter::deleteVideoDone, this, &MyselfWidget::deleteVideoDone);
+
+    // 获取其他⽤⼾信息成功槽函数
+    connect(dataCenter, &model::DataCenter::getOtherUserInfoDone, this, &MyselfWidget::getOtherUserInfoDone, Qt::UniqueConnection);
+}
+
+void MyselfWidget::hideWidget(bool isHide)
+{
+    // 临时⽤⼾需要隐藏界⾯上控件，⾮临时⽤⼾显⽰控件
+    if(isHide)
+    {
+        ui->attentionBtn->hide();
+        ui->attentionCountLabel->hide();
+        ui->attentionLabel->hide();
+        ui->fansLabel->hide();
+        ui->fansCountLabel->hide();
+        ui->likeLabel->hide();
+        ui->likeCountLabel->hide();
+        ui->playLabel->hide();
+        ui->playCountLabel->hide();
+        ui->settingBtn->hide();
+        ui->quitBtn->hide();
+        ui->uploadVideoBtn->hide();
+        // scrollArea隐藏后，控件的位置仍旧保留
+        QSizePolicy sizePolicy = ui->scrollArea->sizePolicy();
+        sizePolicy.setRetainSizeWhenHidden(true);
+        ui->scrollArea->setSizePolicy(sizePolicy);
+        ui->scrollArea->hide();
+        sizePolicy = ui->titleBar->sizePolicy();
+        sizePolicy.setRetainSizeWhenHidden(true);
+        ui->titleBar->setSizePolicy(sizePolicy);
+        ui->titleBar->hide();
+    }
+    else
+    {
+        ui->attentionBtn->show();
+        ui->attentionCountLabel->show();
+        ui->attentionLabel->show();
+        ui->fansLabel->show();
+        ui->fansCountLabel->show();
+        ui->likeLabel->show();
+        ui->likeCountLabel->show();
+        ui->playLabel->show();
+        ui->playCountLabel->show();
+        ui->settingBtn->show();
+        ui->quitBtn->show();
+        ui->uploadVideoBtn->show();
+        ui->scrollArea->show();
+        ui->titleBar->show();
+    }
+}
+
+void MyselfWidget::getUserVideoList(const QString &userId, int pageIndex)
+{
+    // 如果获取的是第⼀⻚的视频时，需要将之前界⾯上的视频元素清空
+    auto *dataCenter = model::DataCenter::getInstance();
+    auto userVideoList = dataCenter->getUserVideoList();
+    if(pageIndex == 1)
+    {
+        userVideoList->clearVideoList();
+        clearVideoList();
+    }
+    dataCenter->getUserVideoListAsync(userId, pageIndex);
+    // page+1，滚动条向下滚动时就可以获取下⼀⻚视频
+    userVideoList->setPageIndex(pageIndex + 1);
+}
+
+void MyselfWidget::clearVideoList()
+{
+    QLayoutItem* videoBoxWidget = nullptr;
+    while((videoBoxWidget = ui->layout->takeAt(0)) != nullptr)
+    {
+        delete videoBoxWidget->widget();
+        delete videoBoxWidget;
+    }
+}
+
+void MyselfWidget::getUserVideoListDone(const QString &userId)
+{
+    auto *dataCenter = model::DataCenter::getInstance();
+    auto *userVideoList = dataCenter->getUserVideoList();
+
+    // 每⼀⾏显⽰ 4 个视频
+    int rowCount = 4;
+    for(int i = ui->layout->count(); i < userVideoList->getVideoCount(); ++i)
+    {
+        int row = i / rowCount;
+        int col = i % rowCount;
+
+        VideoBox *videobox = new VideoBox(userVideoList->videoInfos[i]);
+        ui->layout->addWidget(videobox, row, col);
+
+        // 如果是当前登录⽤⼾获取的视频列表，每个VideoBox都⽀持删除视频操作
+        // userId为空，说明获取当前⽤⼾的视频列表，否则获取其他⽤⼾的视频列表
+        if(userId == "")
+        {
+            videobox->showMoreBtn(true);
+            connect(videobox, &VideoBox::deleteVideo, this, &MyselfWidget::deleteVideo);
+        }
+    }
+    repaint();
+}
+
+void MyselfWidget::onScrollAreaValueChanged(int value)
+{
+    // 当value为0时，即滚动条在最上⾯，⽆需获取下⼀⻚视频
+    if(value == 0)
+    {
+        return;
+    }
+
+    // 正在更新视频，再发出该信号时选择忽略，将以此更新的视频信息显⽰到界⾯后再处理下⼀次 更新
+    if(ui->scrollArea->verticalScrollBar()->maximum() == value)
+    {
+        // 继续获取下⼀⻚的视频数据
+        auto dataCenter = model::DataCenter::getInstance();
+        auto userVideoListPtr = dataCenter->getUserVideoList();
+        dataCenter->getUserVideoListAsync(userId, userVideoListPtr->getPageIndex());
+        userVideoListPtr->setPageIndex(userVideoListPtr->getPageIndex()+1);
+    }
+}
+
+void MyselfWidget::deleteVideo(const QString &videoId)
+{
+    auto *dataCenter = model::DataCenter::getInstance();
+    dataCenter->deleteVideoAsync(videoId);
+}
+
+void MyselfWidget::deleteVideoDone(const QString &videoId)
+{
+    LOG() << "删除视频成功! videoId=" << videoId;
+    // 刷新视频列表
+    getUserVideoList("", 1);
+}
+
+void MyselfWidget::getMyselfInfoDone()
+{
+    // 1. 获取⽤⼾数据
+    auto dataCenter = model::DataCenter::getInstance();
+    auto *myself = dataCenter->getMyselfInfo();
+
+    // 当前⽤⼾可能是普通⽤⼾、管理员、临时⽤⼾
+    if(myself->isTempUser())
+    {
+        // 如果是临时⽤⼾
+        hideWidget(true);
+        ui->avatarBtn->setIcon(QIcon(":/image/myself/defaultAvatar.png"));
+        ui->avatarBtn->setEnabled(false);   // 临时⽤⼾不允许修改头像
+        ui->nicknameBtn->setText("点击登录");
+        ui->nicknameBtn->adjustSize();
+        ui->nicknameBtn->setEnabled(true);  // 允许点击昵称
+        return;
+    }
+    else if(myself->isBUser())
+    {
+        // 如果是管理员，显⽰系统按钮，管理员可以后台操作 --todo
+        Player *player = Player::getInstance();
+        player->showSystemPageBtn(true);
+    }
+
+    // 普通⽤⼾和管理员都要恢复界⾯控件
+    hideWidget(false);
+
+    // 2. 界⾯更新
+    // 设置昵称，根据昵称宽度调整设置按钮距离
+    ui->nicknameBtn->setText(myself->nickname);
+    ui->nicknameBtn->adjustSize();
+    ui->nicknameBtn->setEnabled(false);
+
+    // 根据昵称按钮⽂本⻓度移动设置按钮，即让设置按钮紧跟在昵称按钮之后  8是nicknameBtn和settingBtn间的间隙
+    QRect rect = ui->nicknameBtn->geometry();
+    ui->settingBtn->move(rect.x() + rect.width() + 8, ui->settingBtn->geometry().y());
+
+    // 设置关注数、粉丝数、点赞数、播放数
+    ui->attentionCountLabel->setText(intToString2(myself->followedCount));
+    ui->fansCountLabel->setText(intToString2(myself->followerCount));
+    ui->likeCountLabel->setText(intToString2(myself->likeCount));
+    ui->playCountLabel->setText(intToString2(myself->playCount));
+
+    // 3. 设置头像
+    if(myself->avatarFileId.isEmpty())
+    {
+        // 设置默认头像
+        ui->avatarBtn->setIcon(QIcon(":/image/myself/defaultAvatar.png"));
+    }
+    else
+    {
+        dataCenter->downloadPhotoAsync(myself->avatarFileId);
+    }
+
+    // 4. 其他：隐藏关注按钮、不能点击登录、允许修改头像
+    ui->attentionBtn->hide();
+    ui->avatarBtn->setEnabled(true);
+    ui->myVideoLabel->setText("我的视频");
+}
+
+void MyselfWidget::getAvatarDone(const QString &fileId, const QByteArray &data)
+{
+    // 下列两种情况, 是互斥关系. 要么⽤⼾点击 "我的" 进⼊个⼈信息; 要么⽤⼾点击指定⽤⼾ 头像
+
+    // 获取⾃⼰的头像
+    auto myself = model::DataCenter::getInstance()->getMyselfInfo();
+    if(myself != nullptr && myself->avatarFileId == fileId)
+    {
+        // 修改为设置圆形头像
+        ui->avatarBtn->setIcon(makeIcon(data, ui->avatarBtn->width()/2));
+    }
+
+    // 获取他⼈头像
+    auto otherUser = model::DataCenter::getInstance()->getOtherUserInfo();
+    if(otherUser != nullptr && otherUser->avatarFileId == fileId)
+    {
+        ui->avatarBtn->setIcon(makeIcon(data, ui->avatarBtn->width()/2));
+    }
+}
+
+void MyselfWidget::uploadAvatarDone1(const QString &fileId)
+{
+    // 图⽚上传成功之后，将图⽚Id去修改服务器上⽤⼾头像id
+    auto dataCenter = model::DataCenter::getInstance();
+    dataCenter->setAvatarAsync(fileId);
+}
+
+void MyselfWidget::uploadAvatarDone2()
+{
+    // 重新通过⽤⼾头像 fildId 获取头像，头像获取成功会⾃动设置到界⾯
+    auto dataCenter = model::DataCenter::getInstance();
+    const auto *myself = dataCenter->getMyselfInfo();
+    dataCenter->downloadPhotoAsync(myself->avatarFileId);
+}
+

@@ -37,6 +37,48 @@ Player *Player::getInstance()
     return instance;
 }
 
+void Player::showSystemPageBtn(bool isShow)
+{
+    if(isShow)
+    {
+        ui->sysPageBtn->show();
+    }
+    else
+    {
+        ui->sysPageBtn->hide();
+    }
+}
+
+// 在播放⻚⾯时，点击⽤⼾图像查看userid信息
+void Player::switchToUserInfoPage(const QString &userId)
+{
+    onSwitchPageUI(MyselfPage);
+
+    // 加载其他⽤⼾个⼈信息
+    ui->myPage->loadOtherUser(userId);
+}
+
+void Player::onSwitchStackedWidgetPage(int pageId)
+{
+    onSwitchPageUI(pageId);
+
+
+    // 如果是我的⻚⾯，加载个⼈⽤⼾信息
+    if(pageId == MyselfPage)
+    {
+        ui->myPage->loadMyself();
+    }
+}
+
+void Player::onSwitchPageUI(int pageId)
+{
+    ui->stackedWidget->setCurrentIndex(pageId);
+    // 切换按钮按下后，需要重置按钮上⽂本和图⽚的⾼亮样式
+    resetSwitchBtnInfo(pageId);
+
+    repaint();
+}
+
 void Player::initUI()
 {
     // 去除窗⼝标题栏
@@ -91,14 +133,7 @@ void Player::connectSignalAndSlot()
     });
 }
 
-void Player::onSwitchStackedWidgetPage(int pageId)
-{
-    ui->stackedWidget->setCurrentIndex(pageId);
-    repaint();
 
-    // 切换按钮按下后，需要重置按钮上⽂本和图⽚的⾼亮样式
-    resetSwitchBtnInfo(pageId);
-}
 
 void Player::resetSwitchBtnInfo(int pageId)
 {

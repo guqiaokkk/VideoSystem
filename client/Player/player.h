@@ -27,6 +27,14 @@ public:
     // 获取实例
     static Player *getInstance();
 
+    // 是否显⽰系统⻚⾯按钮
+    void showSystemPageBtn(bool isShow = true);
+
+    // 切换到其他⽤⼾主⻚, 加载对应⽤⼾信息
+    void switchToUserInfoPage(const QString &userId);
+    // 该⽅法内部做只UI界⾯切换，不做数据更新
+    void onSwitchPageUI(int pageId);
+
     // 绑定信号槽函数
     void connectSignalAndSlot();
 

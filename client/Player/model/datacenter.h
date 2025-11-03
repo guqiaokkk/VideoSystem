@@ -28,6 +28,31 @@ public:
     // 设置sessionId
     void setSeesionId(const QString &sessionId);
 
+    // 解析响应中的所有视频对象，并放置VideoList中
+    void setVideoList(const QJsonObject &videoListJsonObj);
+
+    // 界⾯通过该指针将视频信息更新到界⾯
+    VideoList *getVideoListPtr();
+
+    // 解析弹幕数据
+    void setBarragesData(const QJsonArray &barrageArray);
+    // 获取弹幕信息
+    QHash<int64_t, QList<BarrageInfo>> &getBarragesData();
+
+    // 获取和设置当前用户个人信息
+    void setMyselfInfo(const QJsonObject &myselfInfoObj);
+    const UserInfo *getMyselfInfo() const;
+
+    // 获取和设置其他用户的个人信息
+    void setOtherUserInfo(const QJsonObject &otherUserInfoObj);
+    UserInfo *getOtherUserInfo();
+
+    // 修改⽤⼾头像id
+    void setAvatar(const QString &fileId);
+
+    // 获取和设置⽤⼾视频列表
+    void setUserVideoList(const QJsonObject &videoListJson);
+    VideoList *getUserVideoList();
 
 private:
     explicit DataCenter(QObject *parent = nullptr);
@@ -43,11 +68,6 @@ public:
     // 获取所有视频列表
     void getAllVideoListAsync();
 
-    // 解析响应中的所有视频对象，并放置VideoList中
-    void setVideoList(const QJsonObject &videoListJsonObj);
-
-    // 界⾯通过该指针将视频信息更新到界⾯
-    VideoList *getVideoListPtr();
 
     // 获取分类视频列表
     void getAllVideoInKindAsync(int kindId);
@@ -61,15 +81,15 @@ public:
     // 下载图⽚
     void downloadPhotoAsync(const QString &photoFileId);
 
+    // 上传图⽚
+    void uploadPhotoAsync(const QByteArray &photoData);
+
     // 下载视频
     void downloadVideoAsync(const QString &videoFileId);
 
     // 获取弹幕
     void getVideoBarrageAsync(const QString &videoId);
-    // 解析弹幕数据
-    void setBarragesData(const QJsonArray &barrageArray);
-    // 获取弹幕信息
-    QHash<int64_t, QList<BarrageInfo>> &getBarragesData();
+
 
     // 更新播放次数
     void setPlayNumberAsync(const QString &videoId);
@@ -82,6 +102,21 @@ public:
 
     // 新增弹幕
     void loadupBarragesAsync(const QString &videoId, const BarrageInfo &barrageInfo);
+
+    // 获取当前⽤⼾个⼈信息
+    void getMyselfInfoAsync();
+
+    // 获取其他⽤⼾信息
+    void getOtherUserInfoAsync(const QString &userId);
+
+    // 设置⽤⼾头像
+    void setAvatarAsync(const QString &fileId);
+
+    // 获取我的视频列表 userId为空获取当前⽤⼾视频列表，否则获取其他⽤⼾视频列表
+    void getUserVideoListAsync(const QString &userId, int pageIndex);
+
+    // 删除指定视频
+    void deleteVideoAsync(const QString &videoId);
 
 signals:
     void helloDone();
@@ -106,6 +141,9 @@ signals:
     // 添加imageId参数，表明是某控件触发的下载图⽚请求，才处理该次图⽚下载的界⾯显⽰
     void downloadPhotoDone(const QString &imgId, QByteArray imgData);
 
+    // 上传图⽚完成
+    void uploadPhotoDone(const QString &fileId);
+
     // 下载视频处理完毕
     void downloadVideoDone(const QString &videoFilePath, const QString &videoFileId);
 
@@ -115,7 +153,19 @@ signals:
     // 检测是否对视频点赞成功
     void getIsLikeVideoDone(const QString &videoId, bool isLike);
 
+    // 获取⽤⼾个⼈信息, 数据保存到 DataCenter 中
+    void getMyselfInfoDone();
+    // 获取其他⽤⼾信息，数据保存到 DataCenter 中
+    void getOtherUserInfoDone();
 
+    // 设置⽤⼾头像完成
+    void setAvatarDone();
+
+    // 获取指定⽤⼾的视频列表，数据保存在 DataCenter 中
+    void getUserListVideoDone(const QString &userId);
+
+    // 删除视频完成
+    void deleteVideoDone(const QString &videoId);
 
 private:
     static DataCenter *instance;
@@ -136,6 +186,14 @@ private:
 
     // 弹幕信息: key为发送弹幕的时间, value为该时间下的弹幕，
     QHash<int64_t, QList<BarrageInfo>> barrages;
+
+    // 保存当前⽤⼾个⼈信息
+    UserInfo *myselfInfo = nullptr;
+    // 保存其他⽤⼾的信息
+    UserInfo *otherUserInfo = nullptr;
+
+    // 保存指定⽤⼾视频列表：我的视频列表 或 其他⽤⼾视频列表
+    VideoList *userVideoList = nullptr;
 };
 
 

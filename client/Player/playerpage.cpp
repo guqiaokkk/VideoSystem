@@ -6,6 +6,7 @@
 #include "util.h"
 #include "bulletscreenitem.h"
 #include "./model/datacenter.h"
+#include "player.h"
 
 #include <QShortcut>
 
@@ -77,6 +78,9 @@ PlayerPage::PlayerPage(const model::VideoInfo& videoInfo, QWidget *parent)
 
     // 发送弹幕
     connect(ui->bulletScreenText, &BarrageEdit::sendBulletScreen, this, &PlayerPage::onSendBulletScreenBtnClicked);
+
+    // 点击头像后跳转
+    connect(ui->userAvatar, &QPushButton::clicked, this, &PlayerPage::onUserAvatarClicked);
 
     // 该视频是否被点赞过：需要从服务器拿到该视频被当前⽤⼾点赞信息, 根据是否点赞过设置界⾯点赞按钮的样式
     auto dataCenter = model::DataCenter::getInstance();
@@ -529,6 +533,15 @@ void PlayerPage::onQuitBtnClicked()
     }
     this->close();
     this->deleteLater();
+}
+
+void PlayerPage::onUserAvatarClicked()
+{
+    // 1. 先关闭当前⻚⾯
+    this->close();
+
+    // 2. 再切换到上传视频⽤⼾界⾯
+    Player::getInstance()->switchToUserInfoPage(this->videoInfo.userId);
 }
 
 

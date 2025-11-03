@@ -4,6 +4,7 @@
 #include "util.h"
 
 #include <QDir>
+#include <QMenu>
 
 VideoBox::VideoBox(model::VideoInfo videoInfo, QWidget *parent)
     : QWidget(parent)
@@ -33,6 +34,8 @@ VideoBox::VideoBox(model::VideoInfo videoInfo, QWidget *parent)
     // 获取弹幕数据成功
     connect(dataCenter, &model::DataCenter::getVideoBarrageDone, this, &VideoBox::getVideoBarrageSuccess);
 
+    // 删除视频按钮点击
+    connect(ui->delVideoBtn, &QPushButton::clicked, this, &VideoBox::onMoreBtnClicked);
 
 }
 
@@ -85,6 +88,66 @@ void VideoBox::updataVideoInfoUI()
     setUserIcon(videoInfo.userAvatarId);
 
 }
+
+void VideoBox::showMoreBtn(bool isShow)
+{
+    if (isShow) {
+        ui->delVideoBtn->show();
+    }
+    else {
+        ui->delVideoBtn->hide();
+    }
+}
+
+void VideoBox::onMoreBtnClicked()
+{
+    // 定义菜单的样式
+    QString style = "QMenu { "
+                    "background-color:#FFFFFF;"
+                    "border:none;"
+                    "border-radius: 6px;"
+                    "padding: 0; }";
+    style += "QMenu::item { "
+             "background-color:#FFFFFF;"
+             "border: none; "
+             "border-radius: 6px;"
+             "min-width: 50px;"
+             "min-height: 32px;"
+             "font-size: 12px;"
+             "color: #222222;"
+             "padding-left: 24px;}";
+    style += "QMenu::item:selected { "
+             "background-color: rgb(62, 206, 254); "
+             "color: #FFFFFF; }";
+
+    QMenu menu(this);
+    menu.setStyleSheet(style);
+
+    //  让 QMenu 圆⻆⽣效
+    //  去掉窗⼝框架和阴影
+    menu.setWindowFlags(menu.windowFlags() | Qt::FramelessWindowHint | Qt::NoDropShadowWindowHint);
+    //  设置透明度
+    menu.setAttribute(Qt::WA_TranslucentBackground, true);
+    // 添加菜单项
+    menu.addAction("删除");
+
+    // 在⿏标点击位置弹出上下⽂菜单
+    QPoint point = QCursor::pos();
+    QAction *action = menu.exec(point);
+
+    // action为⽤⼾选择的指定菜单项对应的QAction对象的指针；如果⽤⼾取消菜单则返回 nullptr
+    if(action == nullptr){
+        return;
+    }
+    if(action->text() == "删除")
+    {
+        LOG() << "删除视频: " << videoInfo.videoId;
+        // 这⾥仅发送信号, 由 MyselfWidget 类来处理真正的删除操作.
+        // 因为删除视频, 需要涉及到重新加载视频列表, 还是交给上层处理更合适.
+        emit deleteVideo(videoInfo.videoId);
+    }
+}
+
 
 void VideoBox::onPlayClicked()
 {
@@ -206,3 +269,4 @@ void VideoBox::getVideoBarrageSuccess(const QString &videoId)
         ui->likeNum->setText(intToString(this->videoInfo.likeCount));
     });
 }
+
