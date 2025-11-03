@@ -1,4 +1,5 @@
 #include "data.h"
+#include <QJsonArray>
 
 namespace model{
 
@@ -81,6 +82,10 @@ void VideoInfo::loadVideoInfo(const QJsonObject &jsonObj)
     videoTitle = jsonObj["videoTitle"].toString();
     videoDuration = jsonObj["videoDuration"].toInt();
     videoUpTime = jsonObj["videoUpTime"].toString();
+    videoStatus = static_cast<VideoStatus> (jsonObj.value("videoStatus").toInt());
+    checkerId = jsonObj.value("checkerId").toString();
+    checkerName = jsonObj.value("checkerName").toString();
+    checkerAvatar = jsonObj.value("checkerAvatar").toString();
 }
 
 
@@ -165,6 +170,71 @@ void BarrageInfo::loadBarrageInfo(QJsonObject &barrageJson)
     userId = barrageJson["userId"].toString();
     text = barrageJson["barrageContent"].toString();
     playTime = barrageJson["barrageTime"].toInt();
+}
+
+void UserInfo::loadUserInfo(const QJsonObject &userInfoJson)
+{
+    userId = userInfoJson["userId"].toString();
+    email = userInfoJson["email"].toString();
+    nickname = userInfoJson["nickname"].toString();
+
+    // ⻆⾊类型：超级管理员-1、普通管理员-2、普通⽤⼾-3，临时⽤⼾-4
+    QJsonArray roleTypeArray = userInfoJson["roleType"].toArray();
+    for(int i = 0; i < roleTypeArray.size(); ++i)
+    {
+        roleType.append(roleTypeArray[i].toInt());
+    }
+
+    // ⾝份类型：C端⽤⼾ B端⽤⼾
+    QJsonArray identityTypeArray = userInfoJson["identityType"].toArray();
+    for(int i = 0; i < identityTypeArray.size(); ++i)
+    {
+        identityType.append(identityTypeArray[i].toInt());
+    }
+
+    likeCount = userInfoJson["likeCount"].toInt();
+    playCount = userInfoJson["playCount"].toInt();
+    followedCount = userInfoJson["followedCount"].toInt();
+    followerCount = userInfoJson["followerCount"].toInt();
+    userStatus = userInfoJson["userStatus"].toInt();
+    isFollowing = userInfoJson["isFollowing"].toInt();
+    userMemo = userInfoJson["userMemo"].toString();
+    userCTime = userInfoJson["userCTime"].toString();
+    avatarFileId = userInfoJson["avatarFileId"].toString();
+}
+
+bool UserInfo::isBUser() const
+{
+    // ⾝份类型：C端⽤⼾ B端⽤⼾
+    for(auto idType : identityType)
+    {
+        if(idType == BUser)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+// 临时用户
+bool UserInfo::isTempUser() const
+{
+    for(auto role : roleType){
+        if(role == TempUser){
+            return true;
+        }
+    }
+    return false;
+}
+
+void UserInfo::buildTempUserInfo()
+{
+
+}
+
+bool UserInfo::isAdminDisable() const
+{
+
 }
 
 

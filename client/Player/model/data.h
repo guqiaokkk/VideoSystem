@@ -61,6 +61,16 @@ public:
 /////////////////////////////////////////////////
 /// 视频信息结构
 /////////////////////////////////////////////////
+// 视频状态
+enum VideoStatus{
+    noStatus = 0, // ⽆状态
+    waitForChecking, // 待审核
+    putaway, // 审核通过 or 上架
+    reject, // 审核驳回
+    discard // 已下架
+};
+
+
 class VideoInfo
 {
 public:
@@ -77,6 +87,10 @@ public:
     QString videoTitle;         // 视频标题
     int64_t videoDuration;      // 持续时⻓
     QString videoUpTime;        // 视频上传时间
+    int videoStatus;            // 视频状态
+    QString checkerId;          // 审核者id
+    QString checkerName;        // 审核者昵称
+    QString checkerAvatar;      // 审核者⽤⼾头像id
 
     // 通过 JSON 对象加载视频信息
     void loadVideoInfo(const QJsonObject &jsonObj);
@@ -122,6 +136,58 @@ public:
     int64_t videototalCount;            // 该条件下所包含的所有视频的总数,⽐如：分类选择动物，该字段为动物分类下视频总数
                                         // ⽤视频总数和PAGE_COUNT能计算出该分类下总共有多少⻚视频
     const static int PAGE_COUNT = 20;   // 一页中包含的视频个数
+};
+
+
+/////////////////////////////////////////////////
+/// 用户信息结构
+/////////////////////////////////////////////////
+enum RoleType
+{
+    SuperAdmin = 1,  // 超级管理员
+    Admin,          // 普通管理员
+    User,           // 普通⽤⼾
+    TempUser        // 临时⽤⼾
+};
+
+enum IdentityType
+{
+    CUser = 1,      // C 端⽤⼾
+    BUser           // B 端⽤⼾
+};
+
+
+class UserInfo
+{
+public:
+    QString userId;             // 用户Id
+    QString email;              // 邮箱
+    QString nickname;           // 用户昵称
+    QList<int> roleType;        // 角色类型：普通用户 普通管理员 超级管理员 临时用户
+    QList<int> identityType;    // 身份类型：B端用户 C端用户
+    int64_t likeCount;          // 点赞数
+    int64_t playCount;          // 播放数
+    int64_t followedCount;      // 关注数：当前用户关注其他用户的数量
+    int64_t followerCount;      // 粉丝数：其他用户管理当前用户的数量
+    int userStatus;             // 用户状态：管理员页面需要用到--启用和禁止
+    bool isFollowing;           // 是否被关注: 主要在其他用户信息中使用
+    QString userMemo;           // 用户备注信息：新增管理员时需要用到
+    QString userCTime;          // 用户创建的时间
+    QString avatarFileId;       // 用户头像id
+
+    // 保存用户头像数据，该字段发送给服务器，只是客户端自己使用
+    QByteArray userAvatarData;  // 用户头像数据
+
+    // Json对象转换为UserInfo结构
+    void loadUserInfo(const QJsonObject& userInfoJson);
+    // 检测用户是否为B端用户
+    bool isBUser()const;
+    // 检测用户是否为临时用户
+    bool isTempUser()const;
+    // 构建临时用户个人信息
+    void buildTempUserInfo();
+    // 检测用户是否被禁用
+    bool isAdminDisable()const;
 };
 
 

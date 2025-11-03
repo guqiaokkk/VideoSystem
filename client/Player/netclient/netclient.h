@@ -41,6 +41,9 @@ public:
     // 下载图⽚
     void downloadPhoto(const QString &photoFileId);
 
+    // 上传图⽚
+    void uploadPhoto(const QByteArray &photoData);
+
     // 下载视频
     void downloadVideo(const QString &videoFileId);
 
@@ -58,6 +61,18 @@ public:
 
     // 新增弹幕
     void loadupBarrages(const QString &videoId, const model::BarrageInfo &barrageInfo);
+
+    // 获取⽤⼾信息
+    void getUserInfo(const QString &userId);
+
+    // 设置⽤⼾头像
+    void setAvatar(const QString &fileId);
+
+    // 获取指定⽤⼾视频列表
+    void getUserVideoList(const QString& userId, int pageIndex);
+
+    // 删除指定视频
+    void deleteVideo(const QString& videoId);
 
 private:
     // ⽣成请求id

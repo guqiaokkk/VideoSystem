@@ -66,6 +66,9 @@ private:
     // 下载图⽚
     QHttpServerResponse downloadPhoto(const QHttpServerRequest &req);
 
+    // 上传图⽚
+    QHttpServerResponse uploadPhoto(const QHttpServerRequest& req);
+
     // 下载视频
     QHttpServerResponse downloadVideo(const QHttpServerRequest &req);
     // 下载视频分⽚
@@ -85,6 +88,18 @@ private:
 
     // 新增弹幕
     QHttpServerResponse newBarrage(const QHttpServerRequest &req);
+
+    // 获取个⼈信息
+    QHttpServerResponse getUserInfo(const QHttpServerRequest &req);
+
+    // 设置⽤⼾头像
+    QHttpServerResponse setAvatar(const QHttpServerRequest &req);
+
+    // 获取视频列表
+    QHttpServerResponse userVideoList(const QHttpServerRequest &req);
+
+    // 删除视频
+    QHttpServerResponse removeVideo(const QHttpServerRequest &req);
 
 
 private:

@@ -289,6 +289,47 @@ void NetClient::downloadPhoto(const QString &photoFileId)
     });
 }
 
+void NetClient::uploadPhoto(const QByteArray &photoData)
+{
+    // 1. 构造请求
+    QString queryString;
+    queryString += "requestId=";
+    queryString += makeRequestId();
+    queryString += "&";
+    queryString += "sessionId=";
+    queryString += dataCenter->getLogingSessionId();
+
+
+    // 2. 发送请求
+    QNetworkRequest httpReq;
+    httpReq.setUrl(QUrl(HTTP_URL + "/HttpService/uploadPhoto?" + queryString));
+    httpReq.setHeader(QNetworkRequest::ContentTypeHeader, "application/octet- stream");
+    QNetworkReply *httpReply = httpClient.post(httpReq, photoData);
+
+    // 3. 异步处理响应
+    connect(httpReply, &QNetworkReply::finished, this, [=](){
+        //  解析响应
+        bool ok = false;
+        QString reason;
+        QJsonObject respObj = handleHttpResponse(httpReply, ok, reason);
+
+        // 判定响应是否出错
+        if(!ok){
+            LOG()<<"uploadPhoto 请求出错，reason = "<<reason;
+            return;
+        }
+
+        const QString &requestId = respObj["requestId"].toString();
+        const QJsonObject resultObj = respObj["data"].toObject();
+        const QString &fileId = resultObj["fileId"].toString();
+
+        // 发射信号，通知界⾯更视频显⽰
+        emit dataCenter->uploadPhotoDone(fileId);
+
+       LOG() << "uploadPhoto 请求结束, 图⽚上传成功, requestId= " << requestId << ", fileId=" << fileId;
+    });
+}
+
 void NetClient::downloadVideo(const QString &videoFileId)
 {
     // 1. 构造请求
@@ -481,6 +522,150 @@ void NetClient::loadupBarrages(const QString &videoId, const model::BarrageInfo 
         }
 
         LOG() << "newBarrage请求结束，弹幕上传成功, requestId: " << respObj["requestId"].toString();
+    });
+}
+
+void NetClient::getUserInfo(const QString &userId)
+{
+    // 1. 构造请求.requestId 已经统⼀添加过了. 不需要额外添加.
+    QJsonObject reqBody;
+    reqBody["sessionId"] = dataCenter->getLogingSessionId();
+    if(!userId.isEmpty())
+    {
+        // 获取他人的用户信息
+        reqBody["userId"] = userId;
+    }
+
+
+    // 2. 发送请求
+    QNetworkReply *httpReply = sendHttpRequest("/HttpService/getUserInfo", reqBody);
+
+    // 3. 异步处理响应
+    connect(httpReply, &QNetworkReply::finished, this, [=](){
+        bool ok = false;
+        QString reason;
+        QJsonObject respObj = handleHttpResponse(httpReply, ok, reason);
+        if(!ok){
+            LOG()<<"getUserInfo 请求出错，reason = "<<reason;
+            return;
+        }
+
+        //  解析响应体中服务端交给客户端的具体数据
+        QJsonObject resultObj = respObj["data"].toObject();
+
+        // 将个⼈⽤⼾信息保存到 DataCenter 中
+        QJsonObject userInfoObj = resultObj["userInfo"].toObject();
+        if(userId.isEmpty())
+        {
+            dataCenter->setMyselfInfo(userInfoObj);
+            // 发射信号，通知界⾯更新个⼈信息
+            emit dataCenter->getMyselfInfoDone();
+        }
+        else
+        {
+            dataCenter->setOtherUserInfo(userInfoObj);
+            emit dataCenter->getOtherUserInfoDone();
+        }
+
+        dataCenter->setVideoList(resultObj);
+
+        LOG() << "getUserInfo 请求结束，获取⽤⼾信息成功! requestId=" << respObj["requestId"].toString() << ", userId=" << userId;
+    });
+}
+
+// 设置⽤⼾图像id
+void NetClient::setAvatar(const QString &fileId)
+{
+    // 修改头像. 图⽚已经上传过了, 这⾥只设置 fileId
+    // 1. 构造请求
+    QJsonObject reqBody;
+    reqBody["sessionId"] = dataCenter->getLogingSessionId();
+    reqBody["fileId"] = fileId;
+
+    // 2. 发送请求
+    QNetworkReply *httpReply = sendHttpRequest("/HttpService/setAvatar", reqBody);
+
+    // 3. 异步处理响应
+    connect(httpReply, &QNetworkReply::finished, this, [=](){
+        bool ok = false;
+        QString reason;
+        QJsonObject respObj = handleHttpResponse(httpReply, ok, reason);
+        if(!ok){
+            LOG()<<"setAvatar 请求出错，reason = "<<reason << ", requestId=" << respObj["requestId"].toString();
+            return;
+        }
+
+        //  保存头像信息到 DataCenter 中
+        dataCenter->setAvatar(fileId);
+
+        //  发射信号，通知界⾯更新头像
+        emit dataCenter->setAvatarDone();
+
+        LOG() << "setAvatar 请求结束，修改⽤⼾头像成功! requestId=" << respObj["requestId"].toString();
+    });
+}
+
+void NetClient::getUserVideoList(const QString &userId, int pageIndex)
+{
+    // 1. 构造请求
+    QJsonObject reqBody;
+    reqBody["sessionId"] = dataCenter->getLogingSessionId();
+    if(!userId.isEmpty())
+    {
+        reqBody["userId"] = userId;
+    }
+    reqBody["pageIndex"] = pageIndex;
+    reqBody["pageCount"] = model::VideoList::PAGE_COUNT;
+
+    // 2. 发送请求
+    QNetworkReply *httpReply = sendHttpRequest("/HttpService/userVideoList", reqBody);
+
+    // 3. 异步处理响应
+    connect(httpReply, &QNetworkReply::finished, this, [=](){
+        bool ok = false;
+        QString reason;
+        QJsonObject respObj = handleHttpResponse(httpReply, ok, reason);
+        if(!ok){
+            LOG()<<"userVideoList 请求出错，reason = "<<reason << ", requestId=" << respObj["requestId"].toString();
+            return;
+        }
+
+        // 将个⼈⽤⼾信息保存到 DataCenter 中
+        QJsonObject resultObj = respObj["data"].toObject();
+        dataCenter->setUserVideoList(resultObj);
+
+        //  发射信号，通知界⾯更新个⼈信息
+        emit dataCenter->getUserListVideoDone(userId);
+
+        LOG() << "getUserVideoList 请求结束, 获取⽤⼾视频列表完成! requestId=" << respObj["requestId"].toString();
+    });
+}
+
+void NetClient::deleteVideo(const QString &videoId)
+{
+    // 1. 构造请求
+    QJsonObject reqBody;
+    reqBody["sessionId"] = dataCenter->getLogingSessionId();
+    reqBody["videoId"] = videoId;
+
+
+    // 2. 发送请求
+    QNetworkReply *httpReply = sendHttpRequest("/HttpService/removeVideo", reqBody);
+
+    // 3. 异步处理响应
+    connect(httpReply, &QNetworkReply::finished, this, [=](){
+        bool ok = false;
+        QString reason;
+        QJsonObject respObj = handleHttpResponse(httpReply, ok, reason);
+        if(!ok){
+            LOG()<<"removeVideo 请求出错，reason = "<<reason << ", requestId=" << respObj["requestId"].toString();
+            return;
+        }
+
+        //  发射信号，通知界⾯更新个⼈信息
+        emit dataCenter->deleteVideoDone(videoId);
+
+        LOG() << "deleteVideo 成功, requestId=" << respObj["requestId"].toString();
     });
 }
 

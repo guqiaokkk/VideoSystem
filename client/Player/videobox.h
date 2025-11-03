@@ -24,6 +24,9 @@ public:
     // 设置视频信息到界⾯
     void updataVideoInfoUI();
 
+    // 是否显⽰ "更多" 菜单按钮. ⾥⾯包含了删除操作
+    void showMoreBtn(bool isShow);
+
 private:
     void onPlayClicked();
 
@@ -49,6 +52,13 @@ private slots:
     // 获取弹幕成功
     void getVideoBarrageSuccess(const QString &videoId);
 
+    // "更多" 菜单按钮点击事件
+    void onMoreBtnClicked();
+
+
+signals:
+    void deleteVideo(const QString &videoId);
+
 private:
     Ui::VideoBox *ui;
 
@@ -62,6 +72,7 @@ private:
 
     // ⽤⼾图像
     QPixmap userAvatar;
+
 };
 
 #endif // VIDEOBOX_H

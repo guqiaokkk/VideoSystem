@@ -1,5 +1,6 @@
 #include "datacenter.h"
 
+#include "../util.h"
 #include <QJsonArray>
 
 namespace model{
@@ -92,6 +93,11 @@ void DataCenter::setVideoList(const QJsonObject &videoListJsonObj)
         videoListPtr->addVideo(videoInfo);
     }
     videoListPtr->setVideoTotalCount(videoListJsonObj["totalCount"].toInt());
+
+    if(videoListArray.size() == 0)
+    {
+        videoListPtr->setPageIndex(videoListPtr->getPageIndex()-1);
+    }
 }
 
 
@@ -116,6 +122,11 @@ void DataCenter::getAllVideosBySearchTextAsync(const QString &searchText)
 void DataCenter::downloadPhotoAsync(const QString &photoFileId)
 {
     httpClient.downloadPhoto(photoFileId);
+}
+
+void DataCenter::uploadPhotoAsync(const QByteArray &photoData)
+{
+    httpClient.uploadPhoto(photoData);
 }
 
 void DataCenter::downloadVideoAsync(const QString &videoFileId)
@@ -180,6 +191,109 @@ void DataCenter::loadupBarragesAsync(const QString &videoId, const BarrageInfo &
 {
     httpClient.loadupBarrages(videoId, barrageInfo);
 }
+
+void DataCenter::getMyselfInfoAsync()
+{
+    // 不传 userId, 就是获取⾃⼰信息，服务端可以通过session拿到当前登录的⽤⼾id
+    httpClient.getUserInfo("");
+}
+
+void DataCenter::getOtherUserInfoAsync(const QString &userId)
+{
+    // 传 userId, 就是获取其他⼈的信息
+    httpClient.getUserInfo(userId);
+}
+
+void DataCenter::setAvatarAsync(const QString &fileId)
+{
+    httpClient.setAvatar(fileId);
+}
+
+void DataCenter::getUserVideoListAsync(const QString &userId, int pageIndex)
+{
+     httpClient.getUserVideoList(userId, pageIndex);
+}
+
+void DataCenter::deleteVideoAsync(const QString &videoId)
+{
+    httpClient.deleteVideo(videoId);
+}
+
+
+// 获取当前⽤⼾信息-当前⽤⼾：指当前使⽤播放平台的⽤⼾
+void DataCenter::setMyselfInfo(const QJsonObject &myselfInfoObj)
+{
+    if(this->myselfInfo == nullptr)
+    {
+        this->myselfInfo = new UserInfo();
+    }
+    this->myselfInfo->loadUserInfo(myselfInfoObj);
+}
+
+const UserInfo *DataCenter::getMyselfInfo() const
+{
+    return myselfInfo;
+}
+
+// 获取其他⽤⼾信息-其他⽤⼾：指⾮当前登录⽤⼾，⼀般通过点击播放⻚⾯个⼈头像按钮，切换到上传者界⾯时获取
+void DataCenter::setOtherUserInfo(const QJsonObject &otherUserInfoObj)
+{
+    if(this->otherUserInfo == nullptr)
+    {
+        this->otherUserInfo = new UserInfo();
+    }
+    this->otherUserInfo->loadUserInfo(otherUserInfoObj);
+}
+
+UserInfo *DataCenter::getOtherUserInfo()
+{
+    return otherUserInfo;
+}
+
+void DataCenter::setAvatar(const QString &fileId)
+{
+    myselfInfo->avatarFileId = fileId;
+}
+
+void DataCenter::setUserVideoList(const QJsonObject &videoListJson)
+{
+    getUserVideoList();
+
+    // 解析视频信息
+    QJsonArray videoListArray = videoListJson["videoList"].toArray();
+    for(int i = 0; i < videoListArray.size(); ++i)
+    {
+        // 解析出单个视频信息
+        QJsonObject videoInfoObj = videoListArray[i].toObject();
+        VideoInfo videoInfo;
+        videoInfo.loadVideoInfo(videoInfoObj);
+
+        // 视频信息放置到⽤⼾视频列表中
+        userVideoList->videoInfos.push_back(videoInfo);
+    }
+
+    // 设置视频总个数
+    int videoTotalCount = videoListJson["totalCount"].toInt();
+    LOG()<<"视频总个数："<<videoTotalCount;
+    userVideoList->setVideoTotalCount(videoTotalCount);
+
+    // 如果本次未获取到视频，说明后续已经没有视频了，⻚⾯索引不需要+1
+    if(videoListArray.size() == 0)
+    {
+        userVideoList->setPageIndex(userVideoList->getPageIndex()-1);
+    }
+}
+
+VideoList *DataCenter::getUserVideoList()
+{
+    if(userVideoList == nullptr)
+    {
+        userVideoList = new VideoList();
+    }
+    return userVideoList;
+}
+
+
 
 
 

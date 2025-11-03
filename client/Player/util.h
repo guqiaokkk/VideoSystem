@@ -103,7 +103,7 @@ static inline QIcon makeIcon(const QByteArray &byteArray, int radius) //第⼆�
 
 // 整数转换为字符串
 // ⼩于10000直接转成数字字符串,⼤于10000转成m.n万
-static QString intToString(int value)
+static QString intToString(int64_t value)
 {
     if(value < 10000)
     {
@@ -112,6 +112,19 @@ static QString intToString(int value)
     else
     {
         return QString::asprintf("%.1lf万", value/10000.0);
+    }
+}
+
+
+static QString intToString2(int64_t value)
+{
+    if(value < 10000)
+    {
+        return QString::number(value);
+    }
+    else
+    {
+        return QString::asprintf("%.2lfw", value/10000.0);
     }
 }
 

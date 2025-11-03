@@ -75,7 +75,12 @@ private slots:
     // 发送弹幕
     void onSendBulletScreenBtnClicked(const QString &text);
 
+    // 关闭按钮点击
     void onQuitBtnClicked();
+
+    // ⽤⼾头像点击
+    void onUserAvatarClicked();
+
 
 private:
     // 移动窗⼝控件(音量和倍速)
