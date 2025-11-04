@@ -229,8 +229,24 @@ bool UserInfo::isTempUser() const
 
 void UserInfo::buildTempUserInfo()
 {
-
+    userId = "";                // ⽤⼾ID
+    email = "";                 // ⽤⼾邮箱
+    nickname = "默认用户";              // ⽤⼾昵称
+    roleType.append(TempUser);  // 角色类型：普通用户 普通管理员 超级管理员 临时用户
+    //roleType.append(User);
+    identityType.append(CUser); // 身份类型：B端用户 C端用户
+    likeCount = 0;              // 点赞量
+    playCount = 0;              // 播放量
+    followedCount = 0;          // 关注数
+    followerCount = 0;          // 粉丝数量
+    userStatus = 0;             // ⽤⼾状态
+    isFollowing = 0;            // 是否关注
+    userMemo = "";              // ⽤⼾备注信息
+    userCTime = "";             // ⽤⼾创建时间
+    avatarFileId = "";          // ⽤⼾头像Id
 }
+
+
 
 bool UserInfo::isAdminDisable() const
 {

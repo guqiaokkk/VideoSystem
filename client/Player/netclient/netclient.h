@@ -74,6 +74,23 @@ public:
     // 删除指定视频
     void deleteVideo(const QString& videoId);
 
+    // 关注⽤⼾
+    void newAttention(const QString& userId);
+    // 取消关注⽤⼾
+    void delAttention(const QString& userId);
+
+    // 获取短信验证码
+    void getAuthcode(const QString &email);
+
+    // 验证码登录
+    void loginWithMessage(const QString &email, const QString &authcode, const QString &authcodeId);
+
+    // 账号密码登录
+    void loginWithPassword(const QString& email, const QString& password);
+
+    // 会话登录
+    void loginSession();
+
 private:
     // ⽣成请求id
     static QString makeRequestId();

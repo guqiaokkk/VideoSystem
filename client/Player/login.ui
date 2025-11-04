@@ -369,7 +369,7 @@ QLineEdit{ border : none; font-size : 18px; background-color: #F5F4F5; }
 
 QLabel{ font-weight : bold; }</string>
             </property>
-            <widget class="QFrame" name="phoneFrame">
+            <widget class="QFrame" name="emailFrame">
              <property name="geometry">
               <rect>
                <x>0</x>
@@ -384,7 +384,7 @@ QLabel{ font-weight : bold; }</string>
              <property name="frameShadow">
               <enum>QFrame::Shadow::Raised</enum>
              </property>
-             <widget class="QLabel" name="phoneLabel">
+             <widget class="QLabel" name="emailLabel">
               <property name="geometry">
                <rect>
                 <x>40</x>
@@ -397,7 +397,7 @@ QLabel{ font-weight : bold; }</string>
                <string>+86</string>
               </property>
              </widget>
-             <widget class="QLineEdit" name="phoneNum">
+             <widget class="QLineEdit" name="emailNum">
               <property name="geometry">
                <rect>
                 <x>108</x>
@@ -405,6 +405,9 @@ QLabel{ font-weight : bold; }</string>
                 <width>350</width>
                 <height>24</height>
                </rect>
+              </property>
+              <property name="text">
+               <string/>
               </property>
               <property name="placeholderText">
                <string>请输⼊⼿机号</string>

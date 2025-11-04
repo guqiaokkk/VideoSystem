@@ -2,6 +2,7 @@
 #include "./ui_player.h"
 
 #include "util.h"
+#include "./model/datacenter.h"
 
 #include <QGraphicsDropShadowEffect>
 #include <QMouseEvent>
@@ -115,7 +116,12 @@ void Player::connectSignalAndSlot()
 {
     //缩小和关闭
     connect(ui->minBtn, &QPushButton::clicked, this, &QWidget::showMinimized);
-    connect(ui->quitBtn, &QPushButton::clicked, this, &QWidget::close);
+    connect(ui->quitBtn, &QPushButton::clicked, this, [=](){
+        // 将session信息保存到⽂件
+        auto dataCenter = model::DataCenter::getInstance();
+        dataCenter->saveDataFile();
+        close();
+    });
 
     // bodyLeft左侧按钮点击，切换bodyRight⻚⾯
     connect(ui->homePageBtn, &PageSwitchButton::switchPage, this, &Player::onSwitchStackedWidgetPage);
