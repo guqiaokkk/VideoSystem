@@ -5,13 +5,59 @@
 #include "util.h"
 #include "player.h"
 #include "toast.h"
+#include "confirmdialog.h"
+#include "login.h"
 
 #include "./model/data.h"
 #include "./model/datacenter.h"
 
 #include <QFileDialog>
 #include <QScrollBar>
+#include <QTimer>
 
+
+////////////////////////////////// AttentionButton类 //////////////////////////////////
+AttentionButton::AttentionButton(QWidget *parent) : QPushButton(parent)
+{
+    changesStatus(false);
+}
+
+void AttentionButton::changesStatus(bool isAttentionedStatus)
+{
+    this->isAttentionedStatus = isAttentionedStatus;
+    if(isAttentionedStatus)
+    {
+        this->setText("已关注");
+        this->setStyleSheet("QPushButton{"
+                            "background-color: transparent;"
+                            "color: #3ECEFE;"
+                            "border-radius: 4px;"
+                            "border: 1px solid #3ECEFE;"
+                            "padding-left: 13px;"
+                            "padding-right: 13px;}");
+        this->setIconSize(QSize(24, 24));
+        this->setIcon(QIcon(":/images/myself/guanzhu.png"));
+    }
+    else
+    {
+        this->setText("关注");
+        this->setStyleSheet("QPushButton{"
+                            "background-color: #3ECEFE;"
+                            "color: #FFFFFF;"
+                            "border-radius: 4px;"
+                            "border: none;}");
+        // 取消图标
+        this->setIcon(QIcon());
+    }
+}
+
+bool AttentionButton::isAttentioned() const
+{
+    return this->isAttentionedStatus;
+}
+
+
+////////////////////////////////// MyselfWidget类 //////////////////////////////////
 MyselfWidget::MyselfWidget(QWidget *parent)
     : QWidget(parent)
     , ui(new Ui::MyselfWidget)
@@ -20,7 +66,10 @@ MyselfWidget::MyselfWidget(QWidget *parent)
 
     initUI();
 
+    login = new Login(this);
+
     connectSignalAndSlots();
+
 
 }
 
@@ -53,7 +102,7 @@ void MyselfWidget::loadMyself()
     // 加载个⼈视频列表
     // "" : 表⽰获取当前⽤⼾视频列表 1表⽰从获取第1⻚
     userId = "";
-    getUserVideoList("", 1);
+
 
     // 切换到个⼈模式，即允许点击⽤⼾头像按钮修改个⼈头像
     ui->avatarBtn->changeMode(true);
@@ -110,7 +159,7 @@ void MyselfWidget::getOtherUserInfoDone()
     ui->playCountLabel->setText(intToString2(otherUserInfo->playCount));
 
     // 设定关注按钮的状态, 并显⽰.
-
+    ui->attentionBtn->changesStatus(otherUserInfo->isFollowing == 1);
 
     ui->myVideoLabel->setText("TA的视频");
 
@@ -124,6 +173,64 @@ void MyselfWidget::getOtherUserInfoDone()
     {
         dataCenter->downloadPhotoAsync(otherUserInfo->avatarFileId);
     }
+}
+
+void MyselfWidget::onAttentionBtnClicked()
+{
+    // 临时⽤⼾不能关注
+    auto dataCenter = model::DataCenter::getInstance();
+    auto myselfInfo = dataCenter->getMyselfInfo();
+    if(myselfInfo->isTempUser())
+    {
+        Toast::showMessage("请先登陆或注册", login);
+        return;
+    }
+
+    // 修改界⾯UI
+    bool isAttentioned = ui->attentionBtn->isAttentioned();
+    isAttentioned = !isAttentioned;
+    ui->attentionBtn->changesStatus(isAttentioned);
+
+    // 关注⻚⾯有效时才能关注
+    auto otherUserInfo = dataCenter->getOtherUserInfo();
+    if(otherUserInfo == nullptr)
+    {
+        LOG()<<"关注按钮点击时，指定⽤⼾信息不存在!!!";
+        return;
+    }
+
+    if (isAttentioned)
+    {
+        dataCenter->newAttentionAsync(otherUserInfo->userId);
+    }
+    else
+    {
+        dataCenter->delAttentionAsync(otherUserInfo->userId);
+    }
+}
+
+void MyselfWidget::newAttentionDone(const QString &userId)
+{
+    // 更新界⾯UI
+    auto dataCenter = model::DataCenter::getInstance();
+    auto otherUserInfo = dataCenter->getOtherUserInfo();
+    int64_t followerCount = otherUserInfo->followerCount + 1;
+    ui->fansCountLabel->setText(intToString2(followerCount));
+
+    // 更新DataCenter
+    otherUserInfo->followerCount = followerCount;
+}
+
+void MyselfWidget::delAttentionDone(const QString &userId)
+{
+    // 更新界⾯UI
+    auto dataCenter = model::DataCenter::getInstance();
+    auto otherUserInfo = dataCenter->getOtherUserInfo();
+    int64_t followerCount = otherUserInfo->followerCount - 1;
+    ui->fansCountLabel->setText(intToString2(followerCount));
+
+    // 更新DataCenter
+    otherUserInfo->followerCount = followerCount;
 }
 
 
@@ -171,10 +278,11 @@ void MyselfWidget::uploadAvatarBtnClicked()
 
 void MyselfWidget::settingBtnClicked()
 {
-    // 弹出对话框设置⽤⼾信息
-    ModifyMyselfDialog *dialog = new ModifyMyselfDialog();
-    dialog->exec();
-    delete dialog;
+
+        ModifyMyselfDialog *dialog = new ModifyMyselfDialog(this);
+        dialog->exec();
+        delete dialog;
+
 }
 
 void MyselfWidget::uploadViewBtnClicked()
@@ -193,6 +301,31 @@ void MyselfWidget::uploadViewBtnClicked()
         }
 
         emit switchUploadVideoPage(UploadPage);
+    }
+}
+
+void MyselfWidget::onNicknameBtnClicked()
+{
+    // 如果当前⽤⼾恰好是临时⽤⼾，才显⽰登录界⾯
+    auto dataCenter = model::DataCenter::getInstance();
+    auto myself = dataCenter->getMyselfInfo();
+    if(myself->isTempUser())
+    {
+        login->show();
+    }
+}
+
+void MyselfWidget::onQuitBtnClicked()
+{
+    // 显⽰确认取消对话框
+    ConfirmDialog confirmDiglog;
+    confirmDiglog.setOperatorText("确定退出登录吗?");
+    confirmDiglog.exec();
+
+    // 如果选择确定则退出
+    if(confirmDiglog.isConfirmPass())
+    {
+        LOG()<<"⽤⼾退出登录";
     }
 }
 
@@ -231,6 +364,28 @@ void MyselfWidget::connectSignalAndSlots()
 
     // 获取其他⽤⼾信息成功槽函数
     connect(dataCenter, &model::DataCenter::getOtherUserInfoDone, this, &MyselfWidget::getOtherUserInfoDone, Qt::UniqueConnection);
+
+    // 关注按钮绑定槽函数
+    connect(ui->attentionBtn, &AttentionButton::clicked, this, &MyselfWidget::onAttentionBtnClicked);
+
+    // 关注请求响应成功
+    connect(dataCenter, &model::DataCenter::newAttentionDone, this, &MyselfWidget::newAttentionDone);
+    // 取消关注请求响应成功
+    connect(dataCenter, &model::DataCenter::delAttentionDone, this, &MyselfWidget::delAttentionDone);
+
+    // ⽤⼾昵称按钮点击
+    connect(ui->nicknameBtn, &QPushButton::clicked, this, &MyselfWidget::onNicknameBtnClicked);
+
+    // 退出登录按钮点击
+    connect(ui->quitBtn, &QPushButton::clicked, this, &MyselfWidget::onQuitBtnClicked);
+
+    // 登录成功
+    connect(login, &Login::loginSuccess, this, [=](){
+        //dataCenter->getMyselfInfoAsync();
+        // 清空datacenter中保存的临时⽤⼾信息，从新加载当前⽤⼾的个⼈信息
+        dataCenter->clearUserInfo();
+        loadMyself();
+    });
 }
 
 void MyselfWidget::hideWidget(bool isHide)
@@ -382,7 +537,7 @@ void MyselfWidget::getMyselfInfoDone()
     }
     else if(myself->isBUser())
     {
-        // 如果是管理员，显⽰系统按钮，管理员可以后台操作 --todo
+        // 如果是管理员，显⽰系统按钮，管理员可以后台操作
         Player *player = Player::getInstance();
         player->showSystemPageBtn(true);
     }
@@ -421,6 +576,8 @@ void MyselfWidget::getMyselfInfoDone()
     ui->attentionBtn->hide();
     ui->avatarBtn->setEnabled(true);
     ui->myVideoLabel->setText("我的视频");
+
+    getUserVideoList("", 1);
 }
 
 void MyselfWidget::getAvatarDone(const QString &fileId, const QByteArray &data)
@@ -457,4 +614,5 @@ void MyselfWidget::uploadAvatarDone2()
     const auto *myself = dataCenter->getMyselfInfo();
     dataCenter->downloadPhotoAsync(myself->avatarFileId);
 }
+
 

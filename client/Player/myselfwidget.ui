@@ -443,7 +443,7 @@ color: #999999;
           <height>16777215</height>
          </size>
         </property>
-        <widget class="QPushButton" name="attentionBtn">
+        <widget class="AttentionButton" name="attentionBtn">
          <property name="geometry">
           <rect>
            <x>0</x>
@@ -703,6 +703,11 @@ height: 0px;
    <class>AvatarButton</class>
    <extends>QPushButton</extends>
    <header>avatarbutton.h</header>
+  </customwidget>
+  <customwidget>
+   <class>AttentionButton</class>
+   <extends>QPushButton</extends>
+   <header location="global">myselfwidget.h</header>
   </customwidget>
  </customwidgets>
  <resources/>

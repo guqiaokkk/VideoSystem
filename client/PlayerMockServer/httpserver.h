@@ -101,6 +101,22 @@ private:
     // 删除视频
     QHttpServerResponse removeVideo(const QHttpServerRequest &req);
 
+    // 关注⽤⼾
+    QHttpServerResponse newAttention(const QHttpServerRequest &req);
+    // 取消关注⽤⼾
+    QHttpServerResponse delAttention(const QHttpServerRequest &req);
+
+    // 获取短信验证码
+    QHttpServerResponse getCode(const QHttpServerRequest &req);
+
+    // 验证码登录
+    QHttpServerResponse vcodeLogin(const QHttpServerRequest &req);
+
+    // 账号密码登录
+    QHttpServerResponse passwdLogin(const QHttpServerRequest &req);
+
+    // 会话登录
+    QHttpServerResponse loginSession(const QHttpServerRequest &req);
 
 private:
     static HttpServer *instance;    // HttpServer的实例指针

@@ -669,6 +669,182 @@ void NetClient::deleteVideo(const QString &videoId)
     });
 }
 
+void NetClient::newAttention(const QString &userId)
+{
+    // 1. 构造请求
+    QJsonObject reqBody;
+    reqBody["sessionId"] = dataCenter->getLogingSessionId();
+    reqBody["userId"] = userId;
+
+
+    // 2. 发送请求
+    QNetworkReply *httpReply = sendHttpRequest("/HttpService/newAttention", reqBody);
+
+    // 3. 异步处理响应
+    connect(httpReply, &QNetworkReply::finished, this, [=](){
+        bool ok = false;
+        QString reason;
+        QJsonObject respObj = handleHttpResponse(httpReply, ok, reason);
+        if(!ok){
+            LOG()<<"newAttention 请求出错，reason = "<<reason << ", requestId=" << respObj["requestId"].toString();
+            return;
+        }
+
+        //  发射信号，通知界⾯更新个⼈信息
+        emit dataCenter->newAttentionDone(userId);
+
+    });
+}
+
+void NetClient::delAttention(const QString &userId)
+{
+    // 1. 构造请求
+    QJsonObject reqBody;
+    reqBody["sessionId"] = dataCenter->getLogingSessionId();
+    reqBody["userId"] = userId;
+
+
+    // 2. 发送请求
+    QNetworkReply *httpReply = sendHttpRequest("/HttpService/delAttention", reqBody);
+
+    // 3. 异步处理响应
+    connect(httpReply, &QNetworkReply::finished, this, [=](){
+        bool ok = false;
+        QString reason;
+        QJsonObject respObj = handleHttpResponse(httpReply, ok, reason);
+        if(!ok){
+            LOG()<<"delAttention 请求出错，reason = "<<reason << ", requestId=" << respObj["requestId"].toString();
+            return;
+        }
+
+        //  发射信号，通知界⾯更新个⼈信息
+        emit dataCenter->delAttentionDone(userId);
+
+    });
+}
+
+void NetClient::getAuthcode(const QString &email)
+{
+    // 1. 构造请求
+    QJsonObject reqBody;
+    reqBody["sessionId"] = dataCenter->getLogingSessionId();
+    reqBody["email"] = email;
+
+
+    // 2. 发送请求
+    QNetworkReply *httpReply = sendHttpRequest("/HttpService/getCode", reqBody);
+
+    // 3. 异步处理响应
+    connect(httpReply, &QNetworkReply::finished, this, [=](){
+        bool ok = false;
+        QString reason;
+        QJsonObject respObj = handleHttpResponse(httpReply, ok, reason);
+        if(!ok){
+            LOG()<<"getCode 请求出错，reason = "<<reason << ", requestId=" << respObj["requestId"].toString();
+            return;
+        }
+
+        //  解析验证码id，短信登录或注册时需要⽤到
+        QJsonObject authcodeJson = respObj["data"].toObject();
+        QString authcodeId = authcodeJson["codeId"].toString();
+
+        //  发射信号，通知界⾯更新个⼈信息
+        emit dataCenter->getAuthcodeDone(authcodeId);
+
+        LOG() << "getCode 成功, requestId=" << respObj["requestId"].toString();
+    });
+}
+
+void NetClient::loginWithMessage(const QString &email, const QString &authcode, const QString &authcodeId)
+{
+    // 1. 构造请求
+    QJsonObject reqBody;
+    reqBody["sessionId"] = dataCenter->getLogingSessionId();
+    reqBody["email"] = email;
+    reqBody["verifyCode"] = authcode;
+    reqBody["codeId"] = authcodeId;
+
+
+    // 2. 发送请求
+    QNetworkReply *httpReply = sendHttpRequest("/HttpService/vcodeLogin", reqBody);
+
+    // 3. 异步处理响应
+    connect(httpReply, &QNetworkReply::finished, this, [=](){
+        bool ok = false;
+        QString reason;
+        QJsonObject respObj = handleHttpResponse(httpReply, ok, reason);
+        if(!ok){
+            LOG()<<"vcodeLogin 请求出错，reason = "<<reason << ", requestId=" << respObj["requestId"].toString();
+            emit dataCenter->loginWithMessageFailed(reason);
+            return;
+        }
+
+        //  发射信号，通知界⾯更新
+        emit dataCenter->loginWithMessageDone();
+
+        LOG() << "vcodeLogin 成功, requestId=" << respObj["requestId"].toString();
+    });
+}
+
+void NetClient::loginWithPassword(const QString &email, const QString &password)
+{
+    // 1. 构造请求
+    QJsonObject reqBody;
+    reqBody["sessionId"] = dataCenter->getLogingSessionId();
+    reqBody["email"] = email;
+    reqBody["password"] = password;
+
+    // 2. 发送请求
+    QNetworkReply *httpReply = sendHttpRequest("/HttpService/passwdLogin", reqBody);
+
+    // 3. 异步处理响应
+    connect(httpReply, &QNetworkReply::finished, this, [=](){
+        bool ok = false;
+        QString reason;
+        QJsonObject respObj = handleHttpResponse(httpReply, ok, reason);
+        if(!ok){
+            LOG()<<"passwdLogin 请求出错，reason = "<<reason << ", requestId=" << respObj["requestId"].toString();
+            emit dataCenter->loginWithPasswordFailed(reason);
+            return;
+        }
+
+        //  发射信号，通知界⾯更新
+        emit dataCenter->loginWithMessageDone();
+
+        LOG() << "passwdLogin 成功, requestId=" << respObj["requestId"].toString();
+    });
+}
+
+void NetClient::loginSession()
+{
+    // 1. 构造请求
+    QJsonObject reqBody;
+    reqBody["sessionId"] = dataCenter->getLogingSessionId();
+
+    // 2. 发送请求
+    QNetworkReply *httpReply = sendHttpRequest("/HttpService/sessionLogin", reqBody);
+
+    // 3. 异步处理响应
+    connect(httpReply, &QNetworkReply::finished, this, [=](){
+        bool ok = false;
+        QString reason;
+        QJsonObject respObj = handleHttpResponse(httpReply, ok, reason);
+        if(!ok){
+            LOG()<<"sessionLogin 请求出错，reason = "<<reason << ", requestId=" << respObj["requestId"].toString();
+            emit dataCenter->loginWithSessionFailed(reason);
+            return;
+        }
+
+        QJsonObject tempUser = respObj["data"].toObject();
+        // isGuest: 是否为临时用户
+        bool isTempUser = tempUser["isGuest"].toBool();
+        //  发射信号，通知界面登录成功
+        emit dataCenter->loginWithSessionDone(isTempUser);
+
+        LOG() << "sessionLogin 登录成功 , requestId=" << respObj["requestId"].toString();
+    });
+}
+
 QString NetClient::makeRequestId()
 {
     return "R" + QUuid::createUuid().toString().sliced(25, 12);

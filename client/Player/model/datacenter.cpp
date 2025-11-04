@@ -2,6 +2,9 @@
 
 #include "../util.h"
 #include <QJsonArray>
+#include <QStandardPaths>
+#include <QDir>
+#include <QJsonDocument>
 
 namespace model{
 
@@ -10,7 +13,10 @@ DataCenter *DataCenter::instance = nullptr;
 DataCenter::DataCenter(QObject *parent)
     : QObject{parent}
     , httpClient(this)
-{}
+{
+    // 加载数据
+    loadDataFile();
+}
 
 
 DataCenter *model::DataCenter::getInstance()
@@ -20,6 +26,127 @@ DataCenter *model::DataCenter::getInstance()
         instance = new DataCenter();
     }
     return instance;
+}
+
+void DataCenter::initDataFile()
+{
+    // 构造出⽂件的路径, 使⽤ appData 存储⽂件
+    QString basePath = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    QString filePath = basePath + "/Player.json";
+    LOG() << "filePath=" << filePath;
+
+    // 检测路径是否存在
+    QDir dir;
+    if(!dir.exists(basePath))
+    {
+        dir.mkpath(basePath);
+    }
+
+    // 构造好⽂件路径之后, 把⽂件创建出来.
+    // 写⽅式打开, 并且写⼊初始内容
+    QFile file(filePath);
+    if(!file.open(QIODevice::WriteOnly | QIODevice::Text))
+    {
+        LOG() << "打开⽂件失败!" << file.errorString();
+        return;
+    }
+
+    // 打开成功, 写⼊初始内容
+    QString data = "{\n\n}";
+    file.write(data.toUtf8());
+    file.close();
+}
+
+void DataCenter::saveDataFile()
+{
+    QString basePath = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    QString filePath = basePath + "/Player.json";
+    QFile file(filePath);
+    if(!file.open(QIODevice::WriteOnly | QIODevice::Text))
+    {
+        LOG() << "打开⽂件失败!" << file.errorString();
+        return;
+    }
+
+    // 按照 json 格式来写⼊数据.
+    QJsonObject jsonObj;
+    jsonObj["loginSessionId"] = loginSessionId;
+
+    // ⽤⼾类型
+    QJsonArray roleTypeArray;
+    for(auto &idType : myselfInfo->roleType)
+    {
+        roleTypeArray.append(idType);
+    }
+    jsonObj["roleType"] = roleTypeArray;
+
+    // ⾝份类型
+    QJsonArray identityTypeArray;
+    for(auto &idType : myselfInfo->identityType)
+    {
+        identityTypeArray.append(idType);
+    }
+    jsonObj["identityType"] = identityTypeArray;
+
+    // 把 json 写⼊⽂件
+    QJsonDocument jsonDoc(jsonObj);
+    QString s = jsonDoc.toJson();
+    file.write(s.toUtf8());
+
+    // 关闭⽂件
+    file.close();
+}
+
+// 加载⽂件, 在 DataCenter 被实例化的时候, 调⽤执⾏的
+void DataCenter::loadDataFile()
+{
+    QString basePath = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    QString filePath = basePath + "/Player.json";
+
+    // 判定⽂件是否存在, 不存在则初始化, 并创建出新的空⽩的 json ⽂件
+    QFileInfo fileInfo(filePath);
+    if(!fileInfo.exists())
+    {
+        initDataFile();
+    }
+
+    // 读⽅式打开⽂件
+    QFile file(filePath);
+    if(!file.open(QIODevice::ReadOnly | QIODevice::Text))
+    {
+        LOG() << "打开⽂件失败! " << file.errorString();
+        return;
+    }
+
+    // 读取到⽂件内容, 解析为 JSON 对象
+    QJsonDocument jsonDoc = QJsonDocument::fromJson(file.readAll());
+    if(jsonDoc.isNull())
+    {
+        LOG() << "解析 JSON ⽂件失败! JSON ⽂件格式有错误!";
+        file.close();
+        return;
+    }
+
+    // 解析JSON⽂件，拿到session信息
+    QJsonObject jsonObj = jsonDoc.object();
+    this->loginSessionId = jsonObj["loginSessionId"].toString();
+
+    if(myselfInfo == nullptr)
+    {
+        myselfInfo = new UserInfo();
+    }
+    // roleType
+    QJsonArray roleTypeArray = jsonObj["roleType"].toArray();
+    for(int i = 0; i < roleTypeArray.size(); ++i)
+    {
+        myselfInfo->roleType.append(roleTypeArray[i].toInt());
+    }
+    // identityType
+    QJsonArray identityArray = jsonObj["identityType"].toArray();
+    for(int i = 0; i < identityArray.size(); ++i)
+    {
+        myselfInfo->identityType.append(identityArray[i].toInt());
+    }
 }
 
 const QString &DataCenter::getServerURL() const
@@ -219,6 +346,35 @@ void DataCenter::deleteVideoAsync(const QString &videoId)
     httpClient.deleteVideo(videoId);
 }
 
+void DataCenter::newAttentionAsync(const QString &userId)
+{
+    httpClient.newAttention(userId);
+}
+
+void DataCenter::delAttentionAsync(const QString &userId)
+{
+    httpClient.delAttention(userId);
+}
+
+void DataCenter::getAuthcodeAsync(const QString &email)
+{
+    httpClient.getAuthcode(email);
+}
+
+void DataCenter::loginWithMessageAsync(const QString &email, const QString &authcode, const QString &authcodeId)
+{
+    httpClient.loginWithMessage(email, authcode, authcodeId);
+}
+
+void DataCenter::loginWithPasswordAsync(const QString &email, const QString &password)
+{
+    httpClient.loginWithPassword(email, password);
+}
+
+void DataCenter::loginSessionAsync()
+{
+    httpClient.loginSession();
+}
 
 // 获取当前⽤⼾信息-当前⽤⼾：指当前使⽤播放平台的⽤⼾
 void DataCenter::setMyselfInfo(const QJsonObject &myselfInfoObj)
@@ -248,6 +404,27 @@ void DataCenter::setOtherUserInfo(const QJsonObject &otherUserInfoObj)
 UserInfo *DataCenter::getOtherUserInfo()
 {
     return otherUserInfo;
+}
+
+void DataCenter::buildTempUserInfo()
+{
+    if(this->myselfInfo == nullptr)
+    {
+        this->myselfInfo = new UserInfo();
+    }
+
+    // 临时⽤⼾没有⽤⼾信息，服务端权限受限，不需要到服务器获取
+    // 直接将UserInfo设置为临时⽤⼾即可
+    myselfInfo->buildTempUserInfo();
+}
+
+void DataCenter::clearUserInfo()
+{
+    if(myselfInfo)
+    {
+        delete myselfInfo;
+        myselfInfo = nullptr;
+    }
 }
 
 void DataCenter::setAvatar(const QString &fileId)

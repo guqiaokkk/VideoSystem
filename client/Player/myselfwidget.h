@@ -2,11 +2,29 @@
 #define MYSELFWIDGET_H
 
 #include <QWidget>
+#include <QPushButton>
+
+#include "login.h"
 
 namespace Ui {
 class MyselfWidget;
 }
 
+////////////////////////////////// AttentionButton类 //////////////////////////////////
+class AttentionButton : public QPushButton{
+    Q_OBJECT
+public:
+    explicit AttentionButton(QWidget *parent = nullptr);
+
+    void changesStatus(bool isAttentionedStatus);
+    bool isAttentioned() const;
+
+private:
+    // 是否被关注
+    bool isAttentionedStatus = false;
+};
+
+////////////////////////////////// MyselfWidget类 //////////////////////////////////
 class MyselfWidget : public QWidget
 {
     Q_OBJECT
@@ -39,6 +57,12 @@ private:
 
     // 上传视频按钮槽函数
     void uploadViewBtnClicked();
+
+    // 点击⽤⼾昵称,登录按钮
+    void onNicknameBtnClicked();
+
+    // 退出按钮点击
+    void onQuitBtnClicked();
 
     // 绑定信号槽
     void connectSignalAndSlots();
@@ -78,6 +102,14 @@ private slots:
     // 获取其他⽤⼾信息成功后对应槽函数
     void getOtherUserInfoDone();
 
+    // 关注按钮点击
+    void onAttentionBtnClicked();
+
+    // 请求关注响应成功槽函数
+    void newAttentionDone(const QString &userId);
+    // 取消关注响应成功槽函数
+    void delAttentionDone(const QString &userId);
+
 signals:
     // 切换到上传视频⻚⾯
     void switchUploadVideoPage(int pageIndex);
@@ -88,6 +120,10 @@ private:
     Ui::MyselfWidget *ui;
 
     QString userId; // 标记我的⻚⾯中显⽰的是当前⽤⼾还是其他⽤⼾
+
+    // 登录窗⼝指针
+    Login *login;
+
 };
 
 #endif // MYSELFWIDGET_H

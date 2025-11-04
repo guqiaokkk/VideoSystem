@@ -16,6 +16,15 @@ public:
     // 获取DataCenter对象实例
     static DataCenter *getInstance();
 
+    // 初始化数据⽂件
+    void initDataFile();
+
+    // 存储数据到⽂件中
+    void saveDataFile();
+
+    // 从数据⽂件中加载数据到内存
+    void loadDataFile();
+
     // 获取服务器地址
     const QString &getServerURL() const;
 
@@ -46,6 +55,12 @@ public:
     // 获取和设置其他用户的个人信息
     void setOtherUserInfo(const QJsonObject &otherUserInfoObj);
     UserInfo *getOtherUserInfo();
+
+    // 构建临时⽤⼾信息
+    void buildTempUserInfo();
+
+    // 清除⽤⼾信息
+    void clearUserInfo();
 
     // 修改⽤⼾头像id
     void setAvatar(const QString &fileId);
@@ -118,6 +133,23 @@ public:
     // 删除指定视频
     void deleteVideoAsync(const QString &videoId);
 
+    // 关注⽤⼾
+    void newAttentionAsync(const QString& userId);
+    // 取消关注⽤⼾
+    void delAttentionAsync(const QString& userId);
+
+    // 获取短信验证码
+    void getAuthcodeAsync(const QString &email);
+
+    // 验证码登录
+    void loginWithMessageAsync(const QString &email, const QString &authcode, const QString &authcodeId);
+
+    // 账号密码登录
+    void loginWithPasswordAsync(const QString &email, const QString &password);
+
+    // 会话登录
+    void loginSessionAsync();
+
 signals:
     void helloDone();
 
@@ -166,6 +198,26 @@ signals:
 
     // 删除视频完成
     void deleteVideoDone(const QString &videoId);
+
+    // 关注⽤⼾
+    void newAttentionDone(const QString& userId);
+    // 取消关注⽤⼾
+    void delAttentionDone(const QString& userId);
+
+    // 获取短信验证码完成
+    void getAuthcodeDone(const QString &authcodeId);
+
+    // 验证码登录完成
+    void loginWithMessageDone();
+    void loginWithMessageFailed(const QString &errorInfo);
+
+    // 验证码登录完成
+    void loginWithPasswordDone();
+    void loginWithPasswordFailed(const QString &errorInfo);
+
+    // 会话登录完成
+    void loginWithSessionDone(bool isTempUser);
+    void loginWithSessionFailed(const QString &errorInfo);
 
 private:
     static DataCenter *instance;
