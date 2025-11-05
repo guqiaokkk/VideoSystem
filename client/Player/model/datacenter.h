@@ -50,7 +50,7 @@ public:
 
     // 获取和设置当前用户个人信息
     void setMyselfInfo(const QJsonObject &myselfInfoObj);
-    const UserInfo *getMyselfInfo() const;
+    UserInfo *getMyselfInfo();
 
     // 获取和设置其他用户的个人信息
     void setOtherUserInfo(const QJsonObject &otherUserInfoObj);
@@ -97,10 +97,13 @@ public:
     void downloadPhotoAsync(const QString &photoFileId);
 
     // 上传图⽚
-    void uploadPhotoAsync(const QByteArray &photoData);
+    void uploadPhotoAsync(const QByteArray &photoData, QWidget* wndPtr = nullptr);
 
     // 下载视频
     void downloadVideoAsync(const QString &videoFileId);
+
+    // 上传视频
+    void uploadVideoAsync(const QString &videoPath);
 
     // 获取弹幕
     void getVideoBarrageAsync(const QString &videoId);
@@ -150,6 +153,18 @@ public:
     // 会话登录
     void loginSessionAsync();
 
+    // 退出登录
+    void logoutAsync();
+
+    // 设置密码
+    void setPasswordAysnc(const QString &password);
+
+    // 设置昵称
+    void setNicknameAsync(const QString &nickname);
+
+    // 新增视频信息
+    void uploadVideoDescAsync(const VideoDesc &videoDesc);
+
 signals:
     void helloDone();
 
@@ -174,10 +189,13 @@ signals:
     void downloadPhotoDone(const QString &imgId, QByteArray imgData);
 
     // 上传图⽚完成
-    void uploadPhotoDone(const QString &fileId);
+    void uploadPhotoDone(const QString &fileId, QWidget* wndPtr = nullptr);
 
     // 下载视频处理完毕
     void downloadVideoDone(const QString &videoFilePath, const QString &videoFileId);
+
+    // 上传视频处理完毕
+    void uploadVideoDone(const QString& videoId);
 
     // 获取弹幕
     void getVideoBarrageDone(const QString &videoId);
@@ -219,6 +237,18 @@ signals:
     void loginWithSessionDone(bool isTempUser);
     void loginWithSessionFailed(const QString &errorInfo);
 
+    // 退出登录
+    void logoutDone();
+
+    // 设置密码完成
+    void setPasswordDone();
+
+    // 设置昵称完成
+    void setNicknameDone(const QString &nickname);
+
+    // 新增视频信息处理完毕
+    void uploadVideoDescDone();
+
 private:
     static DataCenter *instance;
 
@@ -246,6 +276,8 @@ private:
 
     // 保存指定⽤⼾视频列表：我的视频列表 或 其他⽤⼾视频列表
     VideoList *userVideoList = nullptr;
+
+
 };
 
 

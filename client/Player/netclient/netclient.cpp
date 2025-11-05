@@ -6,6 +6,7 @@
 #include <QJsonObject>
 #include <QStandardPaths>
 #include <qjsonarray.h>
+#include <QUrlQuery>
 
 #include "util.h"
 #include "../model/datacenter.h"
@@ -289,7 +290,7 @@ void NetClient::downloadPhoto(const QString &photoFileId)
     });
 }
 
-void NetClient::uploadPhoto(const QByteArray &photoData)
+void NetClient::uploadPhoto(const QByteArray &photoData, QWidget* wndPtr)
 {
     // 1. 构造请求
     QString queryString;
@@ -324,7 +325,7 @@ void NetClient::uploadPhoto(const QByteArray &photoData)
         const QString &fileId = resultObj["fileId"].toString();
 
         // 发射信号，通知界⾯更视频显⽰
-        emit dataCenter->uploadPhotoDone(fileId);
+        emit dataCenter->uploadPhotoDone(fileId, wndPtr);
 
        LOG() << "uploadPhoto 请求结束, 图⽚上传成功, requestId= " << requestId << ", fileId=" << fileId;
     });
@@ -367,6 +368,55 @@ void NetClient::downloadVideo(const QString &videoFileId)
         emit dataCenter->downloadVideoDone(videoFilePath, videoFileId);
 
         LOG() << "downloadVideo请求结束，视频下载成功";
+    });
+}
+
+void NetClient::uploadVideo(const QString &videoPath)
+{
+    // 1. 构造请求
+    QUrl url(HTTP_URL + "/HttpService/uploadVideo");
+
+    // 添加请求参数到查询对象中
+    QUrlQuery query;
+    query.addQueryItem("requestId", makeRequestId());
+    query.addQueryItem("sessionId", dataCenter->getLogingSessionId());
+
+    // 将查询对象添加到URL中
+    url.setQuery(query);
+
+    // 设置请求对象的URL
+    QNetworkRequest httpReq(url);
+    QFileInfo fileInfo(videoPath);
+    httpReq.setHeader(QNetworkRequest::ContentTypeHeader, "multipart/form-data");
+
+    // 读取视频数据
+    QByteArray videoData = loadFileToByteArray(videoPath);
+
+    // 2. 发送请求
+    QNetworkReply* httpReply = httpClient.post(httpReq, videoData);
+
+    // 3. 异步处理响应
+    connect(httpReply, &QNetworkReply::finished, this, [=](){
+        // 解析响应
+        bool ok = false;
+        QString reason;
+        QJsonObject respObj = handleHttpResponse(httpReply, ok, reason);
+
+        // 2. 判定响应是否出错
+        if(!ok){
+            LOG()<<"keyVideoList 请求出错，reason = "<<reason;
+            return;
+        }
+
+        const QString& requestId = respObj["requestId"].toString();
+        //  解析响应体中服务端交给客户端的具体数据
+        QJsonObject resultObj = respObj["data"].toObject();
+        const QString &fileId = resultObj["fileId"].toString();
+
+        // 发射信号，通知界⾯
+        emit dataCenter->uploadVideoDone(fileId);
+
+        LOG() << "uploadVideo请求结束, 视频上传成功, requestId= " << requestId << ", fileId=" << fileId;
     });
 }
 
@@ -842,6 +892,136 @@ void NetClient::loginSession()
         emit dataCenter->loginWithSessionDone(isTempUser);
 
         LOG() << "sessionLogin 登录成功 , requestId=" << respObj["requestId"].toString();
+    });
+}
+
+void NetClient::logout()
+{
+    // 1. 构造请求
+    QJsonObject reqBody;
+    reqBody["sessionId"] = dataCenter->getLogingSessionId();
+
+    // 2. 发送请求
+    QNetworkReply *httpReply = sendHttpRequest("/HttpService/logout", reqBody);
+
+    // 3. 异步处理响应
+    connect(httpReply, &QNetworkReply::finished, this, [=](){
+        bool ok = false;
+        QString reason;
+        QJsonObject respObj = handleHttpResponse(httpReply, ok, reason);
+        if(!ok){
+            LOG()<<"logout 请求出错，reason = "<<reason << ", requestId=" << respObj["requestId"].toString();
+            return;
+        }
+
+        QJsonObject sessionObj = respObj["data"].toObject();
+        dataCenter->setSeesionId(sessionObj["sessionId"].toString());
+        //  发送信号通知界⾯更新
+        emit dataCenter->logoutDone();
+
+        LOG() << "logout 登录成功 , requestId=" << respObj["requestId"].toString();
+    });
+}
+
+void NetClient::setPassword(const QString &newPassword)
+{
+    // 1. 构造请求
+    QJsonObject reqBody;
+    reqBody["sessionId"] = dataCenter->getLogingSessionId();
+    reqBody["password"] = newPassword;
+
+    // 2. 发送请求
+    QNetworkReply *httpReply = sendHttpRequest("/HttpService/setPassword", reqBody);
+
+    // 3. 异步处理响应
+    connect(httpReply, &QNetworkReply::finished, this, [=](){
+        bool ok = false;
+        QString reason;
+        QJsonObject respObj = handleHttpResponse(httpReply, ok, reason);
+        if(!ok){
+            LOG()<<"setPassword 请求出错，reason = "<<reason << ", requestId=" << respObj["requestId"].toString();
+            return;
+        }
+
+        //  发送信号通知界⾯更新
+        emit dataCenter->setPasswordDone();
+
+        LOG() << "setPassword 成功 , requestId=" << respObj["requestId"].toString();
+    });
+}
+
+void NetClient::setNickname(const QString &nickname)
+{
+    // 1. 构造请求
+    QJsonObject reqBody;
+    reqBody["sessionId"] = dataCenter->getLogingSessionId();
+    reqBody["nickname"] = nickname;
+
+    // 2. 发送请求
+    QNetworkReply *httpReply = sendHttpRequest("/HttpService/setNickname", reqBody);
+
+    // 3. 异步处理响应
+    connect(httpReply, &QNetworkReply::finished, this, [=](){
+        bool ok = false;
+        QString reason;
+        QJsonObject respObj = handleHttpResponse(httpReply, ok, reason);
+        if(!ok){
+            LOG()<<"setNickname 请求出错，reason = "<<reason << ", requestId=" << respObj["requestId"].toString();
+            return;
+        }
+
+        //  发送信号通知界⾯更新昵称
+        emit dataCenter->setNicknameDone(nickname);
+    });
+}
+
+void NetClient::uploadVideoDesc(const model::VideoDesc &videoDesc)
+{
+    // 1. 构造请求
+    QJsonObject reqBody;
+    reqBody["sessionId"] = dataCenter->getLogingSessionId();
+
+    // 构造视频Json数据
+    QJsonObject videoJson;
+    videoJson["videoFileId"] = videoDesc.videoId;
+    videoJson["photoFileId"] = videoDesc.photoId;
+    videoJson["videoTitle"] = videoDesc.tittle;
+    videoJson["videoDesc"] = videoDesc.desc;
+    videoJson["duration"] = videoDesc.duration;
+
+    const model::KindAndTag *kindAndTag = dataCenter->getKindAndTagsClassPtr();
+    if(videoDesc.kind != "")
+    {
+        // ⽤⼾没有选择分类，哪标签⾃然也没有
+        // 和后端约定，分类和标签都没有的情况下，什么分类和标签都不传递
+        //  分类
+        videoJson["videoType"] = kindAndTag->getKindId(videoDesc.kind);
+
+        // 标签
+        QJsonArray tagArray;
+        for(auto &tag : videoDesc.tags)
+        {
+            tagArray.append(kindAndTag->getTagId(videoDesc.kind, tag));
+        }
+        videoJson["videoTag"] = tagArray;
+    }
+
+    reqBody["data"] = videoJson;
+
+    // 2. 发送请求
+    QNetworkReply *httpReply = sendHttpRequest("/HttpService/newVideo", reqBody);
+
+    // 3. 异步处理响应
+    connect(httpReply, &QNetworkReply::finished, this, [=](){
+        bool ok = false;
+        QString reason;
+        QJsonObject respObj = handleHttpResponse(httpReply, ok, reason);
+        if(!ok){
+            LOG()<<"newVideo 请求出错，reason = "<<reason << ", requestId=" << respObj["requestId"].toString();
+            return;
+        }
+        LOG() << "newVideo请求结束，新增视频信息成功, requestId: " << respObj["requestId"].toString();
+        emit dataCenter->uploadVideoDescDone();
     });
 }
 

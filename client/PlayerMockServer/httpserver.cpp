@@ -67,6 +67,9 @@
             idPathTable.insert(QString::number(resourceId++), "/videos/111.m3u8");
         }
 
+        // 假设上传视频Id从60000开始
+        idPathTable.insert(QString::number(60000), "/videos/");
+
     }
 
     bool HttpServer::init()
@@ -120,6 +123,11 @@
         // 客⼾端给mpv提供⼀个m3u8⽂件，mpv会从m3u8⽂件中获取到视频分⽚链接，下载到本地播放
         httpServer.route("/videos/", [=](const QString &request){
             return this->downVideoSegmentation(request);
+        });
+
+        // 上传视频
+        httpServer.route("/HttpService/uploadVideo", [=](const QHttpServerRequest& req) {
+            return this->uploadVideo(req);
         });
 
         // 获取弹幕
@@ -201,6 +209,25 @@
             return this->loginSession(req);
         });
 
+        // 退出登录
+        httpServer.route("/HttpService/logout", [=](const QHttpServerRequest& req) {
+            return this->logout(req);
+        });
+
+        // 修改密码
+        httpServer.route("/HttpService/setPassword", [=](const QHttpServerRequest& req) {
+            return this->setPassword(req);
+        });
+
+        // 修改昵称
+        httpServer.route("/HttpService/setNickname", [=](const QHttpServerRequest& req) {
+            return this->setNickname(req);
+        });
+
+        // 新增视频信息
+        httpServer.route("/HttpService/newVideo", [=](const QHttpServerRequest& req) {
+            return this->newVideo(req);
+        });
 
         return ret == 8000;
     }
@@ -491,7 +518,7 @@
         QUrlQuery query(req.url());
         QString requestId = query.queryItemValue("requestId");
         QString fileId = query.queryItemValue("fileId");
-        LOG() << "[downloadPhoto] 收到 downloadPhoto 请求, requestId=" << requestId;
+        //LOG() << "[downloadPhoto] 收到 downloadPhoto 请求, requestId=" << requestId;
 
         // 构造图⽚路径
         QDir dir(QDir::currentPath());
@@ -499,7 +526,7 @@
         dir.cdUp();
         QString imgPath = dir.absolutePath();
         imgPath += idPathTable[fileId];
-        LOG()<<"图⽚ID："<<fileId<<"--"<<imgPath;
+        //LOG()<<"图⽚ID："<<fileId<<"--"<<imgPath;
 
         // 读取图⽚数据
         QByteArray imgData = loadFileToByteArray(imgPath);
@@ -591,6 +618,44 @@
         // 设置响应头，提⽰浏览器下载⽂件
         QHttpServerResponse httpResp(fileData, QHttpServerResponse::StatusCode::Ok);
         httpResp.setHeader("Content-Type", "application/octet-stream");
+        return httpResp;
+    }
+
+    QHttpServerResponse HttpServer::uploadVideo(const QHttpServerRequest &req)
+    {
+        // 解析查询字符串
+        QUrlQuery query(req.url());
+        const QString &requestId = query.queryItemValue("requestId");
+        const QString &sessionId = query.queryItemValue("sessionId");
+        LOG() << "[uploadVideo] 收到 uploadVideo 请求, requestId=" << requestId << ", sessionId=" << sessionId;
+
+        // 获取请求数据
+        const QByteArray &videoData = req.body();
+
+        // 构造图⽚路径 , 保存视频⽂件到videos⽬录下
+        QDir dir(QDir::currentPath());
+        dir.cdUp();
+        dir.cdUp();
+        QString videoPath = dir.absolutePath();
+        videoPath += "/videos/222.mp4";
+
+        writeByteArrayToFile(videoPath, videoData);
+
+        // 构造正⽂
+        QJsonObject jsonResp;
+        QJsonObject jsonBody;
+        jsonBody["fileId"] = "60000" ;
+
+        jsonResp["data"] = jsonBody;
+        jsonResp["requestId"] = requestId;
+        jsonResp["errorCode"] = 0;
+        jsonResp["errorMsg"] = "";
+
+        QJsonDocument docResp(jsonResp);
+
+        // 构造 HTTP 响应
+        QHttpServerResponse httpResp(docResp.toJson(), QHttpServerResponse::StatusCode::Ok);
+        httpResp.setHeader("Content-Type", "application/json; charset=utf-8");
         return httpResp;
     }
 
@@ -1150,6 +1215,130 @@
         // 构造 HTTP 响应
         QHttpServerResponse httpResp(docResp.toJson(), QHttpServerResponse::StatusCode::Ok);
         httpResp.setHeader("Content-Type", "application/json; charset = utf-8");
+        return httpResp;
+    }
+
+    QHttpServerResponse HttpServer::logout(const QHttpServerRequest &req)
+    {
+        QJsonDocument docReq = QJsonDocument::fromJson(req.body());
+        const QJsonObject &jsonReq = docReq.object();
+
+        LOG() << "[logout] 收到 logout 请求, requestId=" << jsonReq["requestId"].toString();
+
+        // 将⽤⼾切换到临时⽤⼾，返回新的sessionId
+        roleType = TempUser;
+
+        // 构造响应数据
+        QJsonObject jsonResp;
+        jsonResp["requestId"] = jsonReq["requestId"].toString();
+        jsonResp["errorCode"] = 0;
+        jsonResp["errorMsg"] = "";
+
+        QJsonObject jsonBody;
+        jsonBody["sessionId"] = jsonReq["sessionId"].toString();
+        jsonResp["data"] = jsonBody;
+
+        //  返回响应
+        QJsonDocument docResp;
+        docResp.setObject(jsonResp);
+
+        // 构造 HTTP 响应
+        QHttpServerResponse httpResp(docResp.toJson(), QHttpServerResponse::StatusCode::Ok);
+        httpResp.setHeader("Content-Type", "application/json; charset = utf-8");
+        return httpResp;
+    }
+
+    QHttpServerResponse HttpServer::setPassword(const QHttpServerRequest &req)
+    {
+        QJsonDocument docReq = QJsonDocument::fromJson(req.body());
+        const QJsonObject &jsonReq = docReq.object();
+
+        LOG() << "[setPassword] 收到 setPassword 请求, requestId=" << jsonReq["requestId"].toString();
+
+        // 构造响应数据
+        QJsonObject jsonResp;
+        jsonResp["requestId"] = jsonReq["requestId"].toString();
+        jsonResp["errorCode"] = 0;
+        jsonResp["errorMsg"] = "";
+
+
+        //  返回响应
+        QJsonDocument docResp;
+        docResp.setObject(jsonResp);
+
+        // 构造 HTTP 响应
+        QHttpServerResponse httpResp(docResp.toJson(), QHttpServerResponse::StatusCode::Ok);
+        httpResp.setHeader("Content-Type", "application/json; charset = utf-8");
+        return httpResp;
+    }
+
+    QHttpServerResponse HttpServer::setNickname(const QHttpServerRequest &req)
+    {
+        QJsonDocument docReq = QJsonDocument::fromJson(req.body());
+        const QJsonObject &jsonReq = docReq.object();
+
+        LOG() << "[setNickname] 收到 setNickname 请求, requestId=" << jsonReq["requestId"].toString() << ", nickname=" << jsonReq["nickname"].toString();
+
+        // 构造响应数据
+        QJsonObject jsonResp;
+        jsonResp["requestId"] = jsonReq["requestId"].toString();
+        jsonResp["errorCode"] = 0;
+        jsonResp["errorMsg"] = "";
+
+
+        //  返回响应
+        QJsonDocument docResp;
+        docResp.setObject(jsonResp);
+
+        // 构造 HTTP 响应
+        QHttpServerResponse httpResp(docResp.toJson(), QHttpServerResponse::StatusCode::Ok);
+        httpResp.setHeader("Content-Type", "application/json; charset = utf-8");
+        return httpResp;
+    }
+
+    QHttpServerResponse HttpServer::newVideo(const QHttpServerRequest &req)
+    {
+        QJsonDocument docReq = QJsonDocument::fromJson(req.body());
+        const QJsonObject &jsonReq = docReq.object();
+
+        LOG() << "[newVideo] 收到 newVideo 请求, requestId=" << jsonReq["requestId"].toString();
+        // 解析上传视频信息
+        QJsonObject videoInfo = jsonReq["data"].toObject();
+
+        QString videoFileId = videoInfo["videoFileId"].toString();
+        QString photoFileId = videoInfo["photoFileId"].toString();
+        QString videoTitle = videoInfo["videoTitle"].toString();
+        int videoType = videoInfo["videoType"].toInteger();
+        QString videoDesc = videoInfo["videoDesc"].toString();
+        int64_t duration = videoInfo["duration"].toInteger();
+
+        LOG()<<"videoFileId : " << videoFileId;
+        LOG()<<"photoFileId : " << photoFileId;
+        LOG()<<"videoTitle : " << videoTitle;
+        LOG()<<"videoDesc : " << videoDesc;
+        LOG()<<"videoType : " << videoType;
+        LOG()<<"duration : " << duration;
+
+        QJsonArray tagIds = videoInfo["videoTag"].toArray();
+        for(int i = 0; i < tagIds.size(); ++i)
+        {
+            int tagId = tagIds[i].toInt();
+            LOG()<< "tagId" << i <<"-"<< tagId;
+        }
+
+        // 构造响应数据
+        QJsonObject jsonResp;
+        jsonResp["requestId"] = jsonReq["requestId"].toString();
+        jsonResp["errorCode"] = 0;
+        jsonResp["errorMsg"] = "";
+
+        //  返回响应
+        QJsonDocument docResp;
+        docResp.setObject(jsonResp);
+
+        // 构造 HTTP 响应
+        QHttpServerResponse httpResp(docResp.toJson(), QHttpServerResponse::StatusCode::Ok);
+        httpResp.setHeader("Content-Type", "application/json; charset=utf-8");
         return httpResp;
     }
 

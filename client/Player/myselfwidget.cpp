@@ -233,6 +233,21 @@ void MyselfWidget::delAttentionDone(const QString &userId)
     otherUserInfo->followerCount = followerCount;
 }
 
+void MyselfWidget::logoutDone()
+{
+    // 清空界⾯上数据 以及 DataCenter中数据
+    clearVideoList();
+    auto dataCenter = model::DataCenter::getInstance();
+    dataCenter->getVideoListPtr()->clearVideoList();
+
+    // 当前⽤⼾设置为临时⽤⼾
+    dataCenter->buildTempUserInfo();
+    loadMyself();
+
+    // 主⻚中隐藏管理员⻚⾯切换按钮
+    Player::getInstance()->showSystemPageBtn(false);
+}
+
 
 
 void MyselfWidget::initUI()
@@ -273,7 +288,7 @@ void MyselfWidget::uploadAvatarBtnClicked()
     ui->avatarBtn->setIcon(makeIcon(fileData, ui->avatarBtn->width()/2));
 
     // 4. 上传图⽚⽂件到服务器
-    dataCenter->uploadPhotoAsync(fileData);
+    dataCenter->uploadPhotoAsync(fileData, ui->avatarBtn);
 }
 
 void MyselfWidget::settingBtnClicked()
@@ -300,7 +315,12 @@ void MyselfWidget::uploadViewBtnClicked()
             return;
         }
 
-        emit switchUploadVideoPage(UploadPage);
+        // 上传视频⽂件
+        auto dataCenter = model::DataCenter::getInstance();
+        dataCenter->uploadVideoAsync(videoFilePath);
+
+        // 切换到上传视频⻚⾯
+        emit switchUploadVideoPage(UploadPage, videoFilePath);
     }
 }
 
@@ -311,8 +331,26 @@ void MyselfWidget::onNicknameBtnClicked()
     auto myself = dataCenter->getMyselfInfo();
     if(myself->isTempUser())
     {
+        // 先清空界⾯旧数据，然后显式登录界⾯
+        login->reset();
         login->show();
     }
+}
+
+void MyselfWidget::onSetNicknameDown(const QString &nickname)
+{
+    // 保证nicknameBtn的宽度和其字体宽度设置成⼀致
+    ui->nicknameBtn->setText(nickname);
+    ui->nicknameBtn->adjustSize();
+
+    // 将设置按钮移动到昵称按钮之后，并间隔8个像素，y坐标不变
+    QRect rect = ui->nicknameBtn->geometry();
+    ui->settingBtn->move(rect.x() + rect.width() + 8, ui->settingBtn->geometry().y());
+
+    auto dataCenter = model::DataCenter::getInstance();
+    auto myself = dataCenter->getMyselfInfo();
+    myself->nickname = nickname;
+    LOG() << "修改昵称成功! nickname=" << nickname;
 }
 
 void MyselfWidget::onQuitBtnClicked()
@@ -325,6 +363,9 @@ void MyselfWidget::onQuitBtnClicked()
     // 如果选择确定则退出
     if(confirmDiglog.isConfirmPass())
     {
+        // 发送退出登录请求
+        auto dataCenter = model::DataCenter::getInstance();
+        dataCenter->logoutAsync();
         LOG()<<"⽤⼾退出登录";
     }
 }
@@ -386,6 +427,17 @@ void MyselfWidget::connectSignalAndSlots()
         dataCenter->clearUserInfo();
         loadMyself();
     });
+
+    // 退出登录成功
+    connect(dataCenter, &model::DataCenter::logoutDone, this, &MyselfWidget::logoutDone);
+
+    // 修改⽤⼾密码成功
+    connect(dataCenter, &model::DataCenter::setPasswordDone, this, [=](){
+       LOG() << "修改密码成功!";
+    });
+
+    // 设置昵称成功
+    connect(dataCenter, &model::DataCenter::setNicknameDone, this, &MyselfWidget::onSetNicknameDown);
 }
 
 void MyselfWidget::hideWidget(bool isHide)
@@ -600,8 +652,14 @@ void MyselfWidget::getAvatarDone(const QString &fileId, const QByteArray &data)
     }
 }
 
-void MyselfWidget::uploadAvatarDone1(const QString &fileId)
+void MyselfWidget::uploadAvatarDone1(const QString &fileId, QWidget* wndPtr)
 {
+    // 检测是否为上传的⽤⼾头像
+    if(wndPtr != ui->avatarBtn)
+    {
+        return;
+    }
+
     // 图⽚上传成功之后，将图⽚Id去修改服务器上⽤⼾头像id
     auto dataCenter = model::DataCenter::getInstance();
     dataCenter->setAvatarAsync(fileId);

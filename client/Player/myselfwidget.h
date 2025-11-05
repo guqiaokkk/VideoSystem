@@ -61,6 +61,9 @@ private:
     // 点击⽤⼾昵称,登录按钮
     void onNicknameBtnClicked();
 
+    // 昵称修改成功
+    void onSetNicknameDown(const QString &nickname);
+
     // 退出按钮点击
     void onQuitBtnClicked();
 
@@ -84,7 +87,7 @@ private slots:
     void getAvatarDone(const QString &fileId, const QByteArray &data);
 
     // 图⽚上传分两个阶段处理：① 上传图⽚⽂件 ② 修改图⽚
-    void uploadAvatarDone1(const QString &fileId);
+    void uploadAvatarDone1(const QString &fileId, QWidget* wndPtr);
     void uploadAvatarDone2();
 
     // 获取视频列表成功信号
@@ -110,9 +113,12 @@ private slots:
     // 取消关注响应成功槽函数
     void delAttentionDone(const QString &userId);
 
+    // 退出登录成功
+    void logoutDone();
+
 signals:
     // 切换到上传视频⻚⾯
-    void switchUploadVideoPage(int pageIndex);
+    void switchUploadVideoPage(int pageIndex, const QString& fileName);
 
 
 

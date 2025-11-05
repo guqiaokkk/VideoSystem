@@ -110,6 +110,18 @@ void Player::initUI()
 
     // 默认情况下，选中⾸⻚，系统管理⻚⾯隐藏
     ui->stackedWidget->setCurrentIndex(0);
+
+    // 登录成功后，如果是管理员则显⽰管理员⻚⾯
+    auto dataCenter = model::DataCenter::getInstance();
+    auto myselfInfo = dataCenter->getMyselfInfo();
+    if(myselfInfo->isBUser())
+    {
+        ui->sysPageBtn->show();
+    }
+    else
+    {
+        ui->sysPageBtn->hide();
+    }
 }
 
 void Player::connectSignalAndSlot()
@@ -129,9 +141,10 @@ void Player::connectSignalAndSlot()
     connect(ui->sysPageBtn, &PageSwitchButton::switchPage, this, &Player::onSwitchStackedWidgetPage);
 
     // 从我的⻚⾯切换到上传视频⻚⾯
-    connect(ui->myPage, &MyselfWidget::switchUploadVideoPage, this, [=](int pageId){
+    connect(ui->myPage, &MyselfWidget::switchUploadVideoPage, this, [=](int pageId, const QString& videoFilePath){
         LOG()<<"切换到上传视频⻚⾯";
         onSwitchStackedWidgetPage(pageId);
+        ui->uploadVideoPage->setVideoTitle(videoFilePath);
     });
     // 视频上传⻚⾯切换到我的⻚⾯
     connect(ui->uploadVideoPage, &UploadVideoPage::switchMyselfPage, this, [=](int pageId){

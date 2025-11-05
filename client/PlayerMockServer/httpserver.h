@@ -74,6 +74,9 @@ private:
     // 下载视频分⽚
     QHttpServerResponse downVideoSegmentation(const QString &fileName);
 
+    // 上传视频
+    QHttpServerResponse uploadVideo(const QHttpServerRequest &req);
+
     // 获取弹幕数据
     QHttpServerResponse getBarrage(const QHttpServerRequest &req);
 
@@ -117,6 +120,18 @@ private:
 
     // 会话登录
     QHttpServerResponse loginSession(const QHttpServerRequest &req);
+
+    // 退出登录
+    QHttpServerResponse logout(const QHttpServerRequest &req);
+
+    // 设置⽤⼾密码
+    QHttpServerResponse setPassword(const QHttpServerRequest &req);
+
+    // 设置⽤⼾昵称
+    QHttpServerResponse setNickname(const QHttpServerRequest &req);
+
+    // 新增视频信息
+    QHttpServerResponse newVideo(const QHttpServerRequest& req);
 
 private:
     static HttpServer *instance;    // HttpServer的实例指针

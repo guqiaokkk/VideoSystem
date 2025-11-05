@@ -6,6 +6,7 @@
 #include "mpv/mpvplayer.h"
 #include "bulletscreenitem.h"
 #include "./model/data.h"
+#include "login.h"
 
 #include <QWidget>
 #include <QFrame>
@@ -146,6 +147,9 @@ private:
 
     // 标记点赞数
     int64_t likeCount;
+
+    // 登录窗⼝实例指针
+    Login *login;
 };
 
 #endif // PLAYERPAGE_H

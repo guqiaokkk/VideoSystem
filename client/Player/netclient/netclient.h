@@ -42,10 +42,13 @@ public:
     void downloadPhoto(const QString &photoFileId);
 
     // 上传图⽚
-    void uploadPhoto(const QByteArray &photoData);
+    void uploadPhoto(const QByteArray &photoData, QWidget* wndPtr);
 
     // 下载视频
     void downloadVideo(const QString &videoFileId);
+
+    // 上传视频
+    void uploadVideo(const QString &videoPath);
 
     // 获取弹幕
     void getVideoBarrage(const QString &videoId);
@@ -90,6 +93,18 @@ public:
 
     // 会话登录
     void loginSession();
+
+    // 退出登录
+    void logout();
+
+    // 设置密码
+    void setPassword(const QString &newPassword);
+
+    // 设置⽤⼾昵称
+    void setNickname(const QString& nickname);
+
+    // 上传视频描述信息
+    void uploadVideoDesc(const model::VideoDesc& videoDesc);
 
 private:
     // ⽣成请求id
