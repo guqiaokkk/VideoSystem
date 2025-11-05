@@ -2,6 +2,7 @@
 #include "ui_modifymyselfdialog.h"
 
 #include "util.h"
+#include "./model/datacenter.h"
 
 #include "newpassworddialog.h"
 
@@ -14,6 +15,12 @@ ModifyMyselfDialog::ModifyMyselfDialog(QWidget *parent)
     // 去掉窗⼝边框
     setWindowFlag(Qt::FramelessWindowHint);
     ui->passwordWidget->hide();
+
+    // 加载个⼈数据到界⾯上
+    auto dataCenter = model::DataCenter::getInstance();
+    auto myself = dataCenter->getMyselfInfo();
+    ui->phoneNumberLabel->setText(hideEmail(myself->email));
+    ui->nicknameEdit->setText(myself->nickname);
 
     connect(ui->submitBtn, &QPushButton::clicked, this, &ModifyMyselfDialog::onSubmitBtnClicked);
     connect(ui->cancelBtn, &QPushButton::clicked, this, &ModifyMyselfDialog::onCancelBtnClicked);
@@ -28,7 +35,25 @@ ModifyMyselfDialog::~ModifyMyselfDialog()
 
 void ModifyMyselfDialog::onSubmitBtnClicked()
 {
-    LOG() << "submit";
+    auto dataCenter = model::DataCenter::getInstance();
+
+    // 修改密码
+    if(!newPassword.isEmpty())
+    {
+        dataCenter->setPasswordAysnc(newPassword);
+    }
+
+    // 修改昵称
+    auto myself = dataCenter->getMyselfInfo();
+    const QString &newNickname = ui->nicknameEdit->text().trimmed();
+    if(newNickname != myself->nickname)
+    {
+        dataCenter->setNicknameAsync(newNickname);
+    }
+
+
+    // 关闭对话框
+    this->close();
 }
 
 void ModifyMyselfDialog::onCancelBtnClicked()
@@ -57,6 +82,10 @@ void ModifyMyselfDialog::showPasswordDlg()
         LOG() << "取消修改密码";
         return;
     }
+
+    // 保存当前密码
+    newPassword = currenPassword;
+    LOG() << "新密码已设置: " << newPassword;
 
     // 隐藏修改密码按钮, 显⽰已修改
     ui->passwordBtn->hide();

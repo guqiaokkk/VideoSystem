@@ -25,6 +25,9 @@ private slots:
 
 private:
     Ui::ModifyMyselfDialog *ui;
+
+    // 新修改的密码. 通过 NewPasswordDialog 传进来的
+    QString newPassword;
 };
 
 #endif // MODIFYMYSELFDIALOG_H

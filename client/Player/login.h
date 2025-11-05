@@ -15,6 +15,9 @@ public:
     explicit Login(QWidget *parent = nullptr);
     ~Login();
 
+    // 清空界⾯旧数据
+    void reset();
+
 private slots:
     // 选择密码登录
     void onPasswordBtnClicked();

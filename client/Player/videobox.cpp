@@ -193,6 +193,14 @@ void VideoBox::setUserIcon(const QString &userAvatarId)
 
 void VideoBox::paintEvent(QPaintEvent *event)
 {
+    // 在进行任何操作之前，先检查 videoCoverImg 是否有效
+    if (videoCoverImg.isNull()) {
+        // 如果图片是空的（还没下载完），就直接返回，什么都不画。
+        // 或者调用基类的 paintEvent 来绘制默认背景。
+        QWidget::paintEvent(event);
+        return;
+    }
+
     // true：控件在每次绘制时会⾃动使⽤调⾊板中的画刷来⾃动填充背景
     ui->imgBox->setAutoFillBackground(true);
 

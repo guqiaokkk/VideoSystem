@@ -33,6 +33,9 @@ public:
     // 设置视频播放位置
     void setCurrentPlayPosition(int64_t seconds);
 
+    // 使⽤ffmpeg⼯具获取视频⾸帧
+    static QString getVideoFirstFrame(const QString &videoPath);
+
     // 获取当前播放时间
     int64_t getCurPlayTime()const;
 
@@ -49,6 +52,9 @@ signals:
 
     // 所有视频分⽚播放结束信号
     void endOfPlaylist();
+
+    // 视频总时⻓发⽣改变时
+    void durationChanged(int64_t duration);
 
 
 private:

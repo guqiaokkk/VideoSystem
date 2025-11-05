@@ -191,6 +191,21 @@ public:
 };
 
 
+/////////////////////////////////////////////////
+/// 上传视频时描述信息
+/////////////////////////////////////////////////
+class VideoDesc
+{
+public:
+    QString videoId;        // 视频⽂件id
+    QString photoId;        // 视频封⾯id
+    QString tittle;         // 视频标题
+    QString desc;           // 视频描述
+    QString kind;           // 视频分类
+    QList<QString> tags;    // 视频标签
+    int64_t duration;       // 视频持续时⻓
+};
+
 } //end model
 
 #endif // DATA_H

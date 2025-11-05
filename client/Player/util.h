@@ -129,5 +129,16 @@ static QString intToString2(int64_t value)
 }
 
 
+// 隐藏⼿机号码中间四位
+static inline QString hideEmail(const QString &email)
+{
+    if(email.length() < 11)
+    {
+        return email;
+    }
+    return email.left(3) + "****"  + email.right(4);
+}
+
+
 
 #endif // UTIL_H

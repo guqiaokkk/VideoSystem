@@ -16,6 +16,7 @@ DataCenter::DataCenter(QObject *parent)
 {
     // 加载数据
     loadDataFile();
+
 }
 
 
@@ -102,6 +103,8 @@ void DataCenter::loadDataFile()
 {
     QString basePath = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
     QString filePath = basePath + "/Player.json";
+
+    LOG() << "正在加载数据文件, 路径: " << filePath;
 
     // 判定⽂件是否存在, 不存在则初始化, 并创建出新的空⽩的 json ⽂件
     QFileInfo fileInfo(filePath);
@@ -251,14 +254,19 @@ void DataCenter::downloadPhotoAsync(const QString &photoFileId)
     httpClient.downloadPhoto(photoFileId);
 }
 
-void DataCenter::uploadPhotoAsync(const QByteArray &photoData)
+void DataCenter::uploadPhotoAsync(const QByteArray &photoData, QWidget* wndPtr)
 {
-    httpClient.uploadPhoto(photoData);
+    httpClient.uploadPhoto(photoData, wndPtr);
 }
 
 void DataCenter::downloadVideoAsync(const QString &videoFileId)
 {
     httpClient.downloadVideo(videoFileId);
+}
+
+void DataCenter::uploadVideoAsync(const QString &videoPath)
+{
+    httpClient.uploadVideo(videoPath);
 }
 
 void DataCenter::getVideoBarrageAsync(const QString &videoId)
@@ -376,6 +384,26 @@ void DataCenter::loginSessionAsync()
     httpClient.loginSession();
 }
 
+void DataCenter::logoutAsync()
+{
+    httpClient.logout();
+}
+
+void DataCenter::setPasswordAysnc(const QString &password)
+{
+    httpClient.setPassword(password);
+}
+
+void DataCenter::setNicknameAsync(const QString &nickname)
+{
+    httpClient.setNickname(nickname);
+}
+
+void DataCenter::uploadVideoDescAsync(const VideoDesc &videoDesc)
+{
+    httpClient.uploadVideoDesc(videoDesc);
+}
+
 // 获取当前⽤⼾信息-当前⽤⼾：指当前使⽤播放平台的⽤⼾
 void DataCenter::setMyselfInfo(const QJsonObject &myselfInfoObj)
 {
@@ -386,7 +414,7 @@ void DataCenter::setMyselfInfo(const QJsonObject &myselfInfoObj)
     this->myselfInfo->loadUserInfo(myselfInfoObj);
 }
 
-const UserInfo *DataCenter::getMyselfInfo() const
+UserInfo *DataCenter::getMyselfInfo()
 {
     return myselfInfo;
 }

@@ -1,8 +1,12 @@
 #include "uploadvideopage.h"
 #include "ui_uploadvideopage.h"
-
+#include "player.h"
 #include "util.h"
-#include "model/datacenter.h"
+#include <QFileDialog>
+#include "./model/datacenter.h"
+#include "util.h"
+#include "./mpv/mpvplayer.h"
+#include "toast.h"
 
 #include <QFileDialog>
 
@@ -18,6 +22,9 @@ UploadVideoPage::UploadVideoPage(QWidget *parent)
     auto kindAndTag = dataCenter->getKindAndTagsClassPtr();
     ui->kinds->addItems(kindAndTag->getAllKinds());
     ui->kinds->setCurrentIndex(-1); // 默认不选中
+
+    // 默认情况下，上传视频成功图⽚隐藏，视频上传成功后显⽰
+    ui->downIcon->hide();
 
     // 设置标签不拦截鼠标事件
     ui->imgLabel->setAttribute(Qt::WA_TransparentForMouseEvents);
@@ -36,6 +43,28 @@ UploadVideoPage::UploadVideoPage(QWidget *parent)
 
     // 分类选择改变
     connect(ui->kinds, &QComboBox::currentTextChanged, this, &UploadVideoPage::onUpdataTags);
+
+    // 上传视频成功
+    connect(dataCenter, &model::DataCenter::uploadVideoDone, this, &UploadVideoPage::onUploadVideoDone);
+
+    // 上传视频封⾯图成功
+    connect(dataCenter, &model::DataCenter::uploadPhotoDone, this, [=](const QString &coverImgId, QWidget* wndPtr){
+        // 检测是否为上传封⾯图成功
+        if(wndPtr != ui->imgLabel)
+        {
+            return;
+        }
+        this->coverImgId = coverImgId;
+        isUploadPhotoOk = true;
+    });
+
+    // 上传视频信息成功
+    connect(dataCenter, &model::DataCenter::uploadVideoDescDone, this, [=](){
+        // 清空本次上传视频时在界面上的数据
+        resetPage();
+        // 切换回我的页面
+        emit switchMyselfPage(MyselfPage);
+    });
 }
 
 UploadVideoPage::~UploadVideoPage()
@@ -43,10 +72,74 @@ UploadVideoPage::~UploadVideoPage()
     delete ui;
 }
 
+// 将视频名称设置到界⾯
+void UploadVideoPage::setVideoTitle(const QString &videoFilePath)
+{
+    this->videoFilePath = videoFilePath;
+
+    // 截取⽂件名设置到界⾯
+    int start = videoFilePath.lastIndexOf('/') + 1;
+    QString videoTitle = videoFilePath.mid(start);
+    ui->videoTitle->setText(videoTitle);
+    ui->fileName->setText(videoTitle);
+}
+
 void UploadVideoPage::onCommitBtnClicked()
 {
-    // 视频上传成功，切换到我的⻚⾯
-    emit switchMyselfPage(1);
+    if(!isUploadVideoOk)
+    {
+        Toast::showMessage("等待视频上传完成");
+        return;
+    }
+
+    if(!isUploadVideoOk)
+    {
+        Toast::showMessage("等待视频封⾯图上传完成");
+        return;
+    }
+
+    if(!isDurationOk)
+    {
+        Toast::showMessage("等待视频总时⻓获取完成");
+        return;
+    }
+
+    // 只有图⽚和视频都上传完成后，才能拿到视频和图⽚的id，才能进⾏后续视频信息上传
+    if(isUploadVideoOk && isUploadPhotoOk && isDurationOk)
+    {
+        model::VideoDesc videoDesc;
+        videoDesc.videoId = videoId;
+        videoDesc.photoId = coverImgId;
+        // 获取视频标题
+        videoDesc.tittle = ui->videoTitle->text();
+        // 获取视频简介
+        videoDesc.desc = ui->plainTextEdit->toPlainText();
+        // 获取视频分类
+        videoDesc.kind = ui->kinds->currentText();
+        // 视频总时⻓
+        videoDesc.duration = duration;
+
+        // 获取视频标签
+        QList<QPushButton*> tagBtns = ui->tagContent->findChildren<QPushButton*>();
+        for(auto &tagBtn : tagBtns)
+        {
+            if(tagBtn->isChecked())
+            {
+                QString tag = tagBtn->text();
+                videoDesc.tags.append(tag);
+            }
+        }
+
+        if(videoDesc.tags.size() > 5)
+        {
+            Toast::showMessage("最多只能选择5个标签");
+            return;
+        }
+
+        // 新增视频信息到服务器
+        auto dataCenter = model::DataCenter::getInstance();
+        dataCenter->uploadVideoDescAsync(videoDesc);
+    }
 }
 
 void UploadVideoPage::onLineEditTextChanged(const QString &text)
@@ -112,6 +205,9 @@ void UploadVideoPage::onChangeBtnClicked()
         ui->imgLabel->setPixmap(pixmap);
         repaint();
     }
+
+    // ⽤⼾选择了图⽚，则不使⽤默认图⽚
+    uploadPhoto(coverImgPath);
 }
 
 void UploadVideoPage::onUpdataTags(const QString &kind)
@@ -172,3 +268,76 @@ void UploadVideoPage::addTagsByKind(const QString &kind)
     ui->tagLayout->insertSpacing(tags.size(), ui->tagContent->width() - (98+20)*tags.size());
     ui->tagLayout->setSpacing(20);
 }
+
+
+void UploadVideoPage::resetPage()
+{
+    ui->imgLabel->setStyleSheet("#imgLabel{""border-image : url(:/images/uploadVideoPage/fengmian.png);}");
+    ui->videoTitle->setText("");
+    ui->plainTextEdit->setPlainText("");
+    ui->uploadProgress->setText("上传中...");
+    ui->downIcon->hide();
+
+    // 分类和标签默认不选中
+    ui->kinds->setCurrentIndex(-1);
+    addTagsByKind("");
+
+    isUploadVideoOk = false;
+    isUploadPhotoOk = false;
+    isDurationOk = false;
+    videoId = "";
+    coverImgId = "";
+    duration = 0;
+
+
+}
+
+void UploadVideoPage::onUploadVideoDone(const QString &videoId)
+{
+    ui->uploadProgress->setText("上传完成");
+    ui->downIcon->show();
+    this->videoId = videoId;
+    isUploadVideoOk = true;
+
+    // 设置视频⾸帧
+    QString firstFrame = MpvPlayer::getVideoFirstFrame(videoFilePath);
+    QPixmap pixmap(firstFrame);
+    pixmap = pixmap.scaled(ui->imgLabel->size(), Qt::KeepAspectRatioByExpanding, Qt::SmoothTransformation);
+    ui->imgLabel->setPixmap(pixmap);
+
+    // 上传图⽚，并删除图⽚
+    uploadPhoto(firstFrame);
+    QFile::remove(firstFrame);
+
+    // 获取视频总时⻓，不需要显⽰播放窗⼝
+    mpvPlayer = new MpvPlayer();
+    mpvPlayer->startPlay(videoFilePath);
+    mpvPlayer->pause();
+    connect(mpvPlayer, &MpvPlayer::durationChanged, this, &UploadVideoPage::getDurationDone);
+}
+
+void UploadVideoPage::uploadPhoto(const QString &photoPath)
+{
+    // 读取图⽚数据，并将视频封⾯图上传服务器
+    QByteArray fileData = loadFileToByteArray(photoPath);
+    if(fileData.isEmpty())
+    {
+        LOG() << "视频封⾯图⽚失败";
+        return;
+    }
+
+    auto dataCenter = model::DataCenter::getInstance();
+    dataCenter->uploadPhotoAsync(fileData, ui->imgLabel);
+
+
+}
+
+void UploadVideoPage::getDurationDone(int64_t duration)
+{
+    LOG() << duration;
+    this->duration = duration;
+    isDurationOk = true;
+    delete mpvPlayer;
+    mpvPlayer = nullptr;
+}
+

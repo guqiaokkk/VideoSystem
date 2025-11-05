@@ -1,7 +1,6 @@
 #include "playerpage.h"
 #include "ui_playerpage.h"
 
-#include "login.h"
 #include "toast.h"
 #include "util.h"
 #include "bulletscreenitem.h"
@@ -22,6 +21,9 @@ PlayerPage::PlayerPage(const model::VideoInfo& videoInfo, QWidget *parent)
 
     // 实例化倍数播放窗⼝对象
     playSpeed = new PlaySpeed(this);
+
+    // 申请登录窗⼝实例
+    login = new Login();
 
     //initBarrageArea();
 
@@ -105,6 +107,9 @@ PlayerPage::PlayerPage(const model::VideoInfo& videoInfo, QWidget *parent)
 PlayerPage::~PlayerPage()
 {
     delete ui;
+
+    // 销毁登录窗⼝实例
+    delete login;
 
 }
 
@@ -268,7 +273,16 @@ void PlayerPage::onSpeedBtnClicked()
 
 void PlayerPage::onLikeImageBtnClcked()
 {
-    // 检测当前⽤⼾视频为临时⽤⼾，临时⽤⼾需要先登录然后才能点赞 -todo
+    // 检测当前⽤⼾视频为临时⽤⼾，临时⽤⼾需要先登录然后才能点赞
+    auto dataCenter = model::DataCenter::getInstance();
+    auto mySelf = dataCenter->getMyselfInfo();
+    if(mySelf->isTempUser())
+    {
+        Toast::showMessage("请先登录或注册", login);
+        return;
+    }
+
+
     if(false){
         Login* login = new Login();
         Toast::showMessage("先登录，登录完成之后才能点赞", login);;
@@ -487,6 +501,16 @@ void PlayerPage::onBulletScreenClicked()
 
 void PlayerPage::onSendBulletScreenBtnClicked(const QString &text)
 {
+    // 如果⽤⼾未登录，先要让⽤⼾登录，登录成功之后才能显⽰弹幕
+    auto dataCenter = model::DataCenter::getInstance();
+    auto mySelf = dataCenter->getMyselfInfo();
+    if(mySelf->isTempUser())
+    {
+        Toast::showMessage("请先注册登录", login);
+        return;
+    }
+
+
     // 如果弹幕是关闭的则⽆法发送弹幕
     if(!isStartBs){
         return;
@@ -506,7 +530,6 @@ void PlayerPage::onSendBulletScreenBtnClicked(const QString &text)
     barrageInfo.text = text;
     barrageInfo.userId = videoInfo.userId;
 
-    auto dataCenter = model::DataCenter::getInstance();
     dataCenter->loadupBarragesAsync(videoInfo.videoId, barrageInfo);
 }
 

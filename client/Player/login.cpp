@@ -99,6 +99,14 @@ Login::~Login()
     delete ui;
 }
 
+void Login::reset()
+{
+    ui->accountNum->setText("");
+    ui->passwordNum->setText("");
+    ui->emailNum->setText("");
+    ui->authcode->setText("");
+}
+
 void Login::onPasswordBtnClicked()
 {
     ui->messageWidget->hide();

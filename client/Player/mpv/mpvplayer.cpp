@@ -1,6 +1,9 @@
 #include "mpvplayer.h"
 #include "util.h"
 
+#include <QProcess>
+#include <QDir>
+
 static void wakeup(void *ctx)
 {
     MpvPlayer *mvpPlayer = (MpvPlayer *)ctx;
@@ -23,12 +26,28 @@ MpvPlayer::MpvPlayer(QObject *parent, QWidget *videoRenderWnd)
         throw std::runtime_error("can't create mpv instance!!!");
     }
 
-    // 设置视频渲染窗⼝
-    int64_t wid = videoRenderWnd->winId();
-    mpv_set_option(mpv, "wid", MPV_FORMAT_INT64, &wid);
+    // 设置视频渲染窗⼝--将窗⼝的id告知给mpv
+    // 如果设置了视频渲染窗⼝，就告知mpv，否则就不渲染视频画⾯和声⾳输出
+    if(videoRenderWnd)
+    {
+        int64_t wid = videoRenderWnd->winId();
+        mpv_set_option(mpv, "wid", MPV_FORMAT_INT64, &wid);
+    }
+    else
+    {
+        // 此处不需要视频播放，让视频在后台加载成功即可
+        // vo 表⽰视频输出 ao表⽰⾳频输出
+        // vo null:表⽰禁⽌视频输出，视频不会被渲染到任何设备上
+        // ao null：表⽰禁⽌⾳频输出，⾳频不会被播放到任何设备上
+        mpv_set_option_string(mpv, "vo", "null");
+        mpv_set_option_string(mpv, "ao", "null");
+    }
 
     // 注册需要监控的时间
     mpv_observe_property(mpv, 0, "time-pos", MPV_FORMAT_INT64);
+
+    // 订阅 duration 属性变化
+    mpv_observe_property(mpv, 0, "duration", MPV_FORMAT_DOUBLE);
 
     // 设置mpv内部事件触发时的回到函数wakeup , 通过应⽤程序的主事件循环处理mpv事件
     connect(this, &MpvPlayer::mpvEvents, this, &MpvPlayer::onMpvEvents, Qt::QueuedConnection);
@@ -94,6 +113,35 @@ void MpvPlayer::setCurrentPlayPosition(int64_t seconds)
     mpv_set_property_async(mpv, 0, "time-pos", MPV_FORMAT_INT64, &seconds);
 }
 
+QString MpvPlayer::getVideoFirstFrame(const QString &videoPath)
+{
+    // 使⽤ffmpeg⼯具获取视频⾸帧
+    // 获取ffmpeg⼯具的路径
+    QString ffmpegPath = QDir::currentPath() + "/ffmpeg/ffmpeg.exe";
+
+    // 获取保存提取的⾸帧图⽚路径
+    QString fristFrame = QDir::currentPath() + "/firstFrame.png";
+
+    // 设置命令⾏参数
+    QStringList cmd;
+    cmd << "-ss"<<"00:00:00"
+        <<"-i"<<videoPath
+        <<"-vframes"<<"1"
+        <<fristFrame;
+
+    // 启动⼀个进程，⽤来管理ffmpeg⼯具
+    QProcess ffmpegProgress;
+    ffmpegProgress.start(ffmpegPath, cmd);
+
+    // 等待进程完成：⽆限等待，直到进程结束
+    if(!ffmpegProgress.waitForFinished(-1))
+    {
+        LOG()<<"ffmpeg 进程执⾏失败";
+    }
+
+    return fristFrame;
+}
+
 int64_t MpvPlayer::getCurPlayTime() const
 {
     return curPlayTime;
@@ -139,6 +187,14 @@ void MpvPlayer::handleMpvEvent(mpv_event *event)
             // 播放进度发⽣改变，发出信号，让界⾯更新进度条和时间
             emit playPositionChanged(curPlayTime);
         }
+
+        else if(strcmp(eventPropery->name, "duration") == 0 && eventPropery->format == MPV_FORMAT_DOUBLE)
+        {
+            // 获取视频总时⻓
+            int64_t duration = (int64_t)*(double *)eventPropery->data;
+            emit durationChanged(duration);
+        }
+
         break;
     }
     case MPV_EVENT_END_FILE:
