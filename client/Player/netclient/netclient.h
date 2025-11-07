@@ -72,7 +72,7 @@ public:
     void setAvatar(const QString &fileId);
 
     // 获取指定⽤⼾视频列表
-    void getUserVideoList(const QString& userId, int pageIndex);
+    void getUserVideoList(const QString& userId, int pageIndex, const QString& whichPage);
 
     // 删除指定视频
     void deleteVideo(const QString& videoId);
@@ -105,6 +105,18 @@ public:
 
     // 上传视频描述信息
     void uploadVideoDesc(const model::VideoDesc& videoDesc);
+
+    // 获取状态视频列表
+    void getStatusVideoList(int videoStatue, int pageIndex);
+
+    // 审核视频
+    void checkVideo(const QString& videoId, bool result);
+
+    // 上架视频
+    void putwayVideo(const QString &videoId);
+
+    // 下架视频
+    void discardVideo(const QString& videoId);
 
 private:
     // ⽣成请求id

@@ -122,11 +122,17 @@
        <string notr="true">#videoBtn { 
 	background-color : transparent; 
 	border : none;
- 	border- image : url(&quot;:/images/admin/defaultVideoCover.png&quot;);
+ 	/*border- image : url(&quot;:/images/admin/defaultVideoCover.png&quot;);*/
  }</string>
       </property>
       <property name="text">
        <string/>
+      </property>
+      <property name="iconSize">
+       <size>
+        <width>160</width>
+        <height>88</height>
+       </size>
       </property>
      </widget>
      <widget class="QPushButton" name="statusBtn">

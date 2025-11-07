@@ -131,6 +131,11 @@ public:
     // 将列表中的所有视频清空
     void clearVideoList();
 
+    // 修改视频审核信息
+    void updateVideoCheckInfo(const QString &videoId, VideoStatus videoStatus, const QString &nickname,
+                              const QString &checkerId, const QString &checkerAvatarId);
+
+
     QList<VideoInfo> videoInfos;        // ⽬前从服务器获取下来的视频数据
     int64_t pageIndex;                  // ⻚⾯索引
     int64_t videototalCount;            // 该条件下所包含的所有视频的总数,⽐如：分类选择动物，该字段为动物分类下视频总数
@@ -150,10 +155,18 @@ enum RoleType
     TempUser        // 临时⽤⼾
 };
 
+//  身份类型
 enum IdentityType
 {
     CUser = 1,      // C 端⽤⼾
     BUser           // B 端⽤⼾
+};
+
+enum AdminStatus
+{
+    noAdminStatus = 0, // ⽆状态-获取所有管理员
+    enable,            // 启⽤
+    disable            // 禁⽤
 };
 
 
@@ -204,6 +217,36 @@ public:
     QString kind;           // 视频分类
     QList<QString> tags;    // 视频标签
     int64_t duration;       // 视频持续时⻓
+};
+
+/////////////////////////////////////////////////
+/// // 管理员信息
+/////////////////////////////////////////////////
+ class AdminInfo
+{
+ public:
+    QString userId;                 // ⽤⼾Id
+    QString email;                  // 邮箱号
+    model::RoleType roleType;       // ⽤⼾⻆⾊
+    QString nickName;               // ⽤⼾昵称
+    AdminStatus userStatus;         // ⽤⼾状态
+    QString remark;                 // 备注
+
+
+    // QJsonObject 转 AdminInfo
+    void loadAdminInfo(const QJsonObject& jsonObj);
+};
+
+// 管理员列表
+class AdminList
+{
+public:
+    // 添加管理员
+    void addAdminInfo(const AdminInfo &adminInfo);
+
+    QList<AdminInfo> adminList;         // 保存管理员信息
+    int totalCount;                     // 系统中包含的管理员总的个数
+    const static int PAGE_COUNT = 20;   // ⼀个⻚⾯显⽰的管理员信息
 };
 
 } //end model

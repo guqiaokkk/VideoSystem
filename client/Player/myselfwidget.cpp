@@ -357,11 +357,11 @@ void MyselfWidget::onQuitBtnClicked()
 {
     // 显⽰确认取消对话框
     ConfirmDialog confirmDiglog;
-    confirmDiglog.setOperatorText("确定退出登录吗?");
+    confirmDiglog.setText("确定退出登录吗?");
     confirmDiglog.exec();
 
     // 如果选择确定则退出
-    if(confirmDiglog.isConfirmPass())
+    if(confirmDiglog.getConfirm())
     {
         // 发送退出登录请求
         auto dataCenter = model::DataCenter::getInstance();
@@ -496,7 +496,7 @@ void MyselfWidget::getUserVideoList(const QString &userId, int pageIndex)
         userVideoList->clearVideoList();
         clearVideoList();
     }
-    dataCenter->getUserVideoListAsync(userId, pageIndex);
+    dataCenter->getUserVideoListAsync(userId, pageIndex, "myPage");
     // page+1，滚动条向下滚动时就可以获取下⼀⻚视频
     userVideoList->setPageIndex(pageIndex + 1);
 }
@@ -551,7 +551,7 @@ void MyselfWidget::onScrollAreaValueChanged(int value)
         // 继续获取下⼀⻚的视频数据
         auto dataCenter = model::DataCenter::getInstance();
         auto userVideoListPtr = dataCenter->getUserVideoList();
-        dataCenter->getUserVideoListAsync(userId, userVideoListPtr->getPageIndex());
+        dataCenter->getUserVideoListAsync(userId, userVideoListPtr->getPageIndex(), "myPage");
         userVideoListPtr->setPageIndex(userVideoListPtr->getPageIndex()+1);
     }
 }

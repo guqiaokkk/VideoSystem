@@ -164,6 +164,22 @@ void VideoList::clearVideoList()
     pageIndex = 1;
 }
 
+void VideoList::updateVideoCheckInfo(const QString &videoId, VideoStatus videoStatus,
+                                     const QString &nickname, const QString &checkerId, const QString &checkerAvatarId)
+{
+    for(auto &videoInfo : videoInfos)
+    {
+        if(videoInfo.videoId == videoId)
+        {
+            videoInfo.videoStatus = videoStatus;
+            videoInfo.checkerId = checkerId;
+            videoInfo.checkerName = nickname;
+            videoInfo.checkerAvatar = checkerAvatarId;
+            return;
+        }
+    }
+}
+
 void BarrageInfo::loadBarrageInfo(QJsonObject &barrageJson)
 {
     barrageId = barrageJson["barrageId"].toString();
@@ -250,7 +266,17 @@ void UserInfo::buildTempUserInfo()
 
 bool UserInfo::isAdminDisable() const
 {
+    return AdminStatus::disable == userStatus;
+}
 
+void AdminInfo::loadAdminInfo(const QJsonObject &jsonObj)
+{
+    userId = jsonObj["userId"].toString();
+    nickName = jsonObj["nickname"].toString();
+    roleType = static_cast<RoleType>(jsonObj["roleType"].toInt());
+    email = jsonObj["email"].toString();
+    userStatus = static_cast<AdminStatus>(jsonObj["userStatu"].toInt());
+    remark = jsonObj["userMemo"].toString();
 }
 
 

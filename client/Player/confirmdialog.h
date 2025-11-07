@@ -12,10 +12,10 @@ public:
     explicit ConfirmDialog(QWidget *parent = nullptr);
 
     // 让MySelfWidget获取⽤⼾是否真要退出登录
-    bool isConfirmPass()const;
+    bool getConfirm()const;
 
     // 设置界⾯中的显⽰⽂本
-    void setOperatorText(const QString &text);
+    void setText(const QString &text);
 
 signals:
 

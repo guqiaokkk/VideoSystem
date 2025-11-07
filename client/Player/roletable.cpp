@@ -36,6 +36,8 @@ RoleTable::RoleTable(QWidget *parent)
     paginator = new Paginator(10, ui->PaginatorArea);
     paginator->move(0, 20);
     paginator->show();
+
+    ui->layout->setAlignment(Qt::AlignTop);
 }
 
 RoleTable::~RoleTable()

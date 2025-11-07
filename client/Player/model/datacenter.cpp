@@ -344,9 +344,9 @@ void DataCenter::setAvatarAsync(const QString &fileId)
     httpClient.setAvatar(fileId);
 }
 
-void DataCenter::getUserVideoListAsync(const QString &userId, int pageIndex)
+void DataCenter::getUserVideoListAsync(const QString &userId, int pageIndex, const QString& whichPage)
 {
-     httpClient.getUserVideoList(userId, pageIndex);
+     httpClient.getUserVideoList(userId, pageIndex, whichPage);
 }
 
 void DataCenter::deleteVideoAsync(const QString &videoId)
@@ -402,6 +402,26 @@ void DataCenter::setNicknameAsync(const QString &nickname)
 void DataCenter::uploadVideoDescAsync(const VideoDesc &videoDesc)
 {
     httpClient.uploadVideoDesc(videoDesc);
+}
+
+void DataCenter::getStatusVideoListAsync(int videoStatue, int pageIndex)
+{
+    httpClient.getStatusVideoList(videoStatue, pageIndex);
+}
+
+void DataCenter::checkVideoAsync(const QString &videoId, bool result)
+{
+    httpClient.checkVideo(videoId, result);
+}
+
+void DataCenter::putwayVideoAsync(const QString &videoId)
+{
+    httpClient.putwayVideo(videoId);
+}
+
+void DataCenter::discardVideoAsync(const QString &videoId)
+{
+    httpClient.discardVideo(videoId);
 }
 
 // 获取当前⽤⼾信息-当前⽤⼾：指当前使⽤播放平台的⽤⼾
@@ -496,6 +516,40 @@ VideoList *DataCenter::getUserVideoList()
         userVideoList = new VideoList();
     }
     return userVideoList;
+}
+
+void DataCenter::setStatusVideoList(const QJsonObject &videoListObj)
+{
+    getUserVideoList();
+
+    // 设置总⻚数
+    QJsonArray videoListArray = videoListObj["videoList"].toArray();
+    for(int i = 0; i < videoListArray.size(); ++i)
+    {
+        // 解析出单个视频信息
+        QJsonObject videoInfoObj = videoListArray[i].toObject();
+        VideoInfo videoInfo;
+        videoInfo.loadVideoInfo(videoInfoObj);
+
+        // 视频信息放置到⽤⼾视频列表中
+        statusVideoList->videoInfos.push_back(videoInfo);
+    }
+
+    // 设置视频总个数
+    int videoTotalCount = videoListObj["totalCount"].toInt();
+    LOG()<<"视频总个数："<<videoTotalCount;
+    statusVideoList->setVideoTotalCount(videoTotalCount);
+
+    LOG()<<"状态视频列表总共有："<<statusVideoList->getVideoTotalCount()<<"个视频";
+}
+
+VideoList *DataCenter::getStatusVideoList()
+{
+    if(statusVideoList == nullptr)
+    {
+        statusVideoList = new VideoList();
+    }
+    return statusVideoList;
 }
 
 

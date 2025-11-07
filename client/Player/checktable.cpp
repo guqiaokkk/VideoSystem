@@ -4,6 +4,8 @@
 #include "util.h"
 
 #include "checktableitem.h"
+#include "./model/datacenter.h"
+#include "toast.h"
 
 CheckTable::CheckTable(QWidget *parent)
     : QWidget(parent)
@@ -15,7 +17,7 @@ CheckTable::CheckTable(QWidget *parent)
     ui->videoStatus->addItem("审核通过");
     ui->videoStatus->addItem("审核驳回");
     ui->videoStatus->addItem("已下架");
-    ui->videoStatus->addItem("转码中");
+    //ui->videoStatus->addItem("转码中");
     ui->videoStatus->setCurrentIndex(0);
 
     //使⽤正则表达式对视频⽤⼾id进⾏校验
@@ -32,14 +34,23 @@ CheckTable::CheckTable(QWidget *parent)
     // 查询按钮点击信号槽绑定
     connect(ui->queryBtn, &QPushButton::clicked, this, &CheckTable::onQueryBtnClicked);
 
+    // 获取⽤⼾视频列表
+    auto dataCenter = model::DataCenter::getInstance();
+    connect(dataCenter, &model::DataCenter::getUserListVideoDone, this, &CheckTable::updateCheckTable);
+
     // 默认显⽰审核⻚⾯
-    updateCheckTable();
+    //updateCheckTable();
 
 
     // 创建分⻚器并显⽰
-    paginator = new Paginator(10, ui->PaginatorArea);
+    paginator = new Paginator(1, ui->PaginatorArea);
     paginator->move(0, 15);
     paginator->show();
+
+    // 获取状态视频列表完成
+    connect(dataCenter, &model::DataCenter::getStatusVideoListDone, this, [=](){
+        updateCheckTable("", "checkPage");
+    });
 }
 
 
@@ -48,12 +59,39 @@ CheckTable::~CheckTable()
     delete ui;
 }
 
-void CheckTable::updateCheckTable()
+void CheckTable::updateCheckTable(const QString &userId, const QString whichPage)
 {
-    // 将CheckTableItem添加到界⾯中
-    for (int i = 0; i < 10; i++)
+    if("checkPage" != whichPage){
+        return;
+    }
+
+    // 清空旧视频内容
+    QLayoutItem *item = nullptr;
+    while ((item = ui->layout->takeAt(0)) != nullptr)
     {
-        CheckTableItem* item = new CheckTableItem(this);
+        delete item->widget();
+        delete item;
+    }
+
+    // 获取⽤⼾视频列表
+    auto dataCenter = model::DataCenter::getInstance();
+    auto statusVideoList = dataCenter->getStatusVideoList();
+    if(statusVideoList == nullptr)
+    {
+        return;
+    }
+
+    // 重置分⻚器
+    auto videoList = statusVideoList->videoInfos;
+    int videoCountOfPage = model::VideoList::PAGE_COUNT;
+    if(page == 1)
+    {
+        resetPaginator((statusVideoList->getVideoTotalCount() + videoCountOfPage-1) / videoCountOfPage);
+    }
+
+    for(int i = 0; i < videoList.size(); ++i)
+    {
+        CheckTableItem *item = new CheckTableItem(this, videoList[i]);
         ui->layout->addWidget(item);
     }
 }
@@ -77,7 +115,19 @@ void CheckTable::onResetBtnClicked()
     // 清空⽤⼾id
     ui->userIdEdit->setText("");
     ui->videoStatus->setCurrentIndex(0);
-    LOG()<<"重置按钮点击...";
+
+    // 获取⽤⼾视频列表
+    auto dataCenter = model::DataCenter::getInstance();
+    auto myselfInfo = dataCenter->getMyselfInfo();
+    if(myselfInfo->isAdminDisable())
+    {
+        Toast::showMessage("您已被禁⽌了，⽆法进⾏操作");
+    }
+    else
+    {
+        getVideoList(1);
+    }
+
 }
 
 void CheckTable::onQueryBtnClicked()
@@ -94,5 +144,60 @@ void CheckTable::onQueryBtnClicked()
                                 "font-family:微软雅⿊;"
                                 "font-size:14px;"
                                 "color:#222222;");
-    LOG()<<"查询按钮点击...";
+    auto dataCenter = model::DataCenter::getInstance();
+    auto myselfInfo = dataCenter->getMyselfInfo();
+    if(myselfInfo->isAdminDisable())
+    {
+        Toast::showMessage("您已被禁⽌了，⽆法进⾏操作");
+    }
+    else
+    {
+        getVideoList(1);
+    }
+}
+
+void CheckTable::getVideoList(int page)
+{
+    this->page = page;
+
+
+    // 系统⻚⾯不需要保存所有视频，每次只保存⼀⻚，因此DataCenter中也只保存⼀⻚即可
+    // 注意：此处不能调⽤视频列表的clearVideoList⽅法，因为该⽅法会将视频总数也清空的， 会影响分⻚器⻚数计算
+    // 视频审核⻚⾯，视频列表中只保存⼀个⻚⾯的视频，将QList清空即可
+    //dataCenter->getStatusVideoList()->clearVideoList();
+
+    auto dataCenter = model::DataCenter::getInstance();
+    auto videoListPtr = dataCenter->getStatusVideoList();
+    videoListPtr->videoInfos.clear();
+
+    // 优先按照⽤⼾Id获取视频
+    QString userId = ui->userIdEdit->text();
+    if(!userId.isEmpty())
+    {
+        // 获取指定⽤⼾视频
+        dataCenter->getUserVideoListAsync(userId, page, "checkPage");
+    }
+    else
+    {
+        // 获取状态视频列表
+        model::VideoStatus videoStatue = static_cast<model::VideoStatus>(ui->videoStatus->currentIndex());
+        dataCenter->getStatusVideoListAsync(videoStatue, page);
+    }
+}
+
+void CheckTable::resetPaginator(int pageCount)
+{
+    // 当重新获取视频列表后，每次获取结果的⻚⾯都不⼀样，分⻚器重新设置
+    if(paginator){
+        delete paginator;
+    }
+
+    paginator = new Paginator(pageCount, ui->PaginatorArea);
+    paginator->move(0, 15);
+    paginator->show();
+
+    // 分⻚器信号
+    connect(paginator, &Paginator::pageChanged, this, [=](int page){
+        getVideoList(page);
+    });
 }
