@@ -8,6 +8,7 @@
 #include "player.h"
 
 #include <QShortcut>
+#include <QJsonArray>
 
 PlayerPage::PlayerPage(const model::VideoInfo& videoInfo, QWidget *parent)
     : QWidget(parent)
@@ -238,6 +239,12 @@ void PlayerPage::setUserIcon(QPixmap &userImg)
 
 void PlayerPage::updataPlayCount()
 {
+    // 如果视频是在审核，则不更新播放数
+    if(videoInfo.videoStatus != model::VideoStatus::putaway){
+        return;
+    }
+
+
     // 如果播放次数已经更新了，则不重复更新
     if(isUpdataPlayNum){
         return;
@@ -254,7 +261,27 @@ void PlayerPage::updataPlayCount()
     auto videoList = dataCenter->getVideoListPtr();
     videoList->incrementPlayNum(videoInfo.videoId);
 
-    // 我的⻚⾯视频列表--【待处理】
+    // 我的⻚⾯视频列表
+    auto myVideoList = dataCenter->getUserVideoList();
+    if(myVideoList->videoInfos.isEmpty())
+    {
+        return;
+    }
+    else
+    {
+        myVideoList->incrementPlayNum(videoInfo.videoId);
+    }
+
+    // 管理员视频列表
+    auto statusVideoList = dataCenter->getStatusVideoList();
+    if(statusVideoList->videoInfos.isEmpty())
+    {
+        return;
+    }
+    else
+    {
+        statusVideoList->incrementPlayNum(videoInfo.videoId);
+    }
 
     // 更新服务器上该视频的播放数
     dataCenter->setPlayNumberAsync(videoInfo.videoId);
@@ -276,12 +303,20 @@ void PlayerPage::onLikeImageBtnClcked()
     // 检测当前⽤⼾视频为临时⽤⼾，临时⽤⼾需要先登录然后才能点赞
     auto dataCenter = model::DataCenter::getInstance();
     auto mySelf = dataCenter->getMyselfInfo();
+
+    // 如果视频状态是待审核状态，则说明是管理员在审核视频，不能对视频点赞
+    if(videoInfo.videoStatus == model::VideoStatus::putaway)
+    {
+        Toast::showMessage("视频审核中禁⽌点赞!!!");
+        return;
+    }
+
+
     if(mySelf->isTempUser())
     {
         Toast::showMessage("请先登录或注册", login);
         return;
     }
-
 
     if(false){
         Login* login = new Login();
@@ -501,6 +536,14 @@ void PlayerPage::onBulletScreenClicked()
 
 void PlayerPage::onSendBulletScreenBtnClicked(const QString &text)
 {
+    // 如果视频正在审核，则不能发送弹幕
+    if(videoInfo.videoStatus == model::VideoStatus::putaway)
+    {
+        Toast::showMessage("视频审核时不能发送弹幕!!!");
+        return;
+    }
+
+
     // 如果⽤⼾未登录，先要让⽤⼾登录，登录成功之后才能显⽰弹幕
     auto dataCenter = model::DataCenter::getInstance();
     auto mySelf = dataCenter->getMyselfInfo();
@@ -549,11 +592,34 @@ void PlayerPage::onQuitBtnClicked()
         videoListPtr->updateLikeCount(videoInfo.videoId, likeCount);
         videoInfo.likeCount = likeCount;
 
-        //myselfPage --- todo
+        //⽤⼾视频列表
+        auto myVideoList = dataCenter->getUserVideoList();
+        if(myVideoList->videoInfos.isEmpty()){
+            return;
+        }
+        else
+        {
+            myVideoList->updateLikeCount(videoInfo.videoId, likeCount);
+        }
+
+        //管理员视频列表
+        auto statusVideoList = dataCenter->getStatusVideoList();
+        if(statusVideoList->videoInfos.isEmpty()){
+            return;
+        }
+        else
+        {
+            statusVideoList->updateLikeCount(videoInfo.videoId, likeCount);
+        }
+
 
         // 通知videoBox修改点赞信息
         emit updataLikeNum(likeCount);
     }
+
+    // 清空弹幕数据
+    dataCenter->setBarragesData(QJsonArray());
+
     this->close();
     this->deleteLater();
 }

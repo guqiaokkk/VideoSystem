@@ -69,6 +69,10 @@ public:
     void setUserVideoList(const QJsonObject &videoListJson);
     VideoList *getUserVideoList();
 
+    // 获取和设置状态视频列表
+    void setStatusVideoList(const QJsonObject &videoListObj);
+    VideoList *getStatusVideoList();
+
 private:
     explicit DataCenter(QObject *parent = nullptr);
 
@@ -131,7 +135,7 @@ public:
     void setAvatarAsync(const QString &fileId);
 
     // 获取我的视频列表 userId为空获取当前⽤⼾视频列表，否则获取其他⽤⼾视频列表
-    void getUserVideoListAsync(const QString &userId, int pageIndex);
+    void getUserVideoListAsync(const QString &userId, int pageIndex, const QString& whichPage);
 
     // 删除指定视频
     void deleteVideoAsync(const QString &videoId);
@@ -164,6 +168,18 @@ public:
 
     // 新增视频信息
     void uploadVideoDescAsync(const VideoDesc &videoDesc);
+
+    // 获取状态视频列表
+    void getStatusVideoListAsync(int videoStatue, int pageIndex);
+
+    // 视频审核
+    void checkVideoAsync(const QString &videoId, bool result);
+
+    // 上架视频
+    void putwayVideoAsync(const QString &videoId);
+
+    // 下架视频
+    void discardVideoAsync(const QString& videoId);
 
 signals:
     void helloDone();
@@ -212,7 +228,7 @@ signals:
     void setAvatarDone();
 
     // 获取指定⽤⼾的视频列表，数据保存在 DataCenter 中
-    void getUserListVideoDone(const QString &userId);
+    void getUserListVideoDone(const QString &userId, const QString& whichPage);
 
     // 删除视频完成
     void deleteVideoDone(const QString &videoId);
@@ -249,6 +265,18 @@ signals:
     // 新增视频信息处理完毕
     void uploadVideoDescDone();
 
+    // 获取状态视频列表完成
+    void getStatusVideoListDone();
+
+    // 视频审核完成
+    void checkVideoDone();
+
+    // 上架视频完成
+    void putwayVideoDone();
+
+    // 下架视频完成
+    void discardVideoDone();
+
 private:
     static DataCenter *instance;
 
@@ -276,6 +304,9 @@ private:
 
     // 保存指定⽤⼾视频列表：我的视频列表 或 其他⽤⼾视频列表
     VideoList *userVideoList = nullptr;
+
+    // 状态视频列表
+    VideoList *statusVideoList = nullptr;
 
 
 };

@@ -171,6 +171,7 @@ void Paginator::jumpToPage(int page)
 
     // 更新当前⻚数
     currentPage = page;
+    emit pageChanged(currentPage);
 }
 
 // page <= 5 的情况

@@ -133,6 +133,18 @@ private:
     // 新增视频信息
     QHttpServerResponse newVideo(const QHttpServerRequest& req);
 
+    // 获取状态视频列表
+    QHttpServerResponse statusVideoList(const QHttpServerRequest &req);
+
+    // 审核视频
+    QHttpServerResponse checkVideo(const QHttpServerRequest &req);
+
+    // 上架视频
+    QHttpServerResponse saleVideo(const QHttpServerRequest &req);
+
+    // 下架视频
+    QHttpServerResponse haltVideo(const QHttpServerRequest &req);
+
 private:
     static HttpServer *instance;    // HttpServer的实例指针
     QHttpServer httpServer;         // Qt封装的QHttpServer对象

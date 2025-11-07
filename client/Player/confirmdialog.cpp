@@ -73,12 +73,12 @@ ConfirmDialog::ConfirmDialog(QWidget *parent)
     });
 }
 
-bool ConfirmDialog::isConfirmPass() const
+bool ConfirmDialog::getConfirm() const
 {
     return isConfirm;
 }
 
-void ConfirmDialog::setOperatorText(const QString &text)
+void ConfirmDialog::setText(const QString &text)
 {
     textLabel->setText(text);
 }
