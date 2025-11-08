@@ -260,6 +260,36 @@
             return this->haltVideo(req);
         });
 
+        // 获取管理员信息-⼿机号
+        httpServer.route("/HttpService/getAdminByEmail", [=](const QHttpServerRequest& req) {
+            return this->getAdminByEmail(req);
+        });
+
+        // 获取管理员列表-状态
+        httpServer.route("/HttpService/getAdminListByStatus", [=](const QHttpServerRequest& req) {
+            return this->getAdminListByStatus(req);
+        });
+
+        // 新增管理员
+        httpServer.route("/HttpService/newAdministrator", [=](const QHttpServerRequest& req) {
+            return this->newAdministrator(req);
+        });
+
+        // 编辑管理员
+        httpServer.route("/HttpService/setAdministrator", [=](const QHttpServerRequest& req) {
+            return this->setAdministrator(req);
+        });
+
+        // 设置⽤⼾状态
+        httpServer.route("/HttpService/setStatus", [=](const QHttpServerRequest& req) {
+            return this->setStatus(req);
+        });
+
+        // 删除管理员
+        httpServer.route("/HttpService/delAdministrator", [=](const QHttpServerRequest& req) {
+            return this->delAdministrator(req);
+        });
+
         return ret == 8000;
     }
 
@@ -1511,6 +1541,263 @@
         QString videoId = jsonReq["videoId"].toString();
 
         LOG()<<"视频 "<< videoId <<"下架";
+
+        // 构造响应体
+        QJsonObject jsonResp;
+        jsonResp["requestId"] = jsonReq["requestId"].toString();
+        jsonResp["errorCode"] = 0;
+        jsonResp["errorMsg"] = "";
+
+        //  返回响应
+        QJsonDocument docResp;
+        docResp.setObject(jsonResp);
+
+        // 构造 HTTP 响应
+        QHttpServerResponse httpResp(docResp.toJson(), QHttpServerResponse::StatusCode::Ok);
+        httpResp.setHeader("Content-Type", "application/json; charset = utf-8");
+        return httpResp;
+    }
+
+    QHttpServerResponse HttpServer::getAdminByEmail(const QHttpServerRequest &req)
+    {
+        QJsonDocument docReq = QJsonDocument::fromJson(req.body());
+        const QJsonObject &jsonReq = docReq.object();
+
+        LOG() << "[getAdminByEmail] 收到 getAdminByEmail 请求, requestId=" << jsonReq["requestId"].toString();
+
+        QString email = jsonReq["email"].toString();
+        LOG()<<"email "<< email;
+
+        int userId = 1234;
+        QJsonObject userInfoJson;
+        userInfoJson["userId"] = QString::number(userId);
+        userInfoJson["nickname"] = "平台管理员";
+        userInfoJson["roleType"] = 2; // 平台管理员
+        userInfoJson["email"] = email;
+        userInfoJson["userStatu"] = rand()%2 + 1; // 状态为1-启⽤ 2-禁⽌
+        userInfoJson["userMemo"] = "有审核视频权限";
+
+        QJsonObject jsonBody;
+        jsonBody["userInfo"] = userInfoJson;
+        // 构造响应体
+        QJsonObject jsonResp;
+        jsonResp["requestId"] = jsonReq["requestId"].toString();
+        jsonResp["errorCode"] = 0;
+        jsonResp["errorMsg"] = "";
+        jsonResp["data"] = jsonBody;
+
+        //  返回响应
+        QJsonDocument docResp;
+        docResp.setObject(jsonResp);
+
+        // 构造 HTTP 响应
+        QHttpServerResponse httpResp(docResp.toJson(), QHttpServerResponse::StatusCode::Ok);
+        httpResp.setHeader("Content-Type", "application/json; charset = utf-8");
+        return httpResp;
+    }
+
+    QHttpServerResponse HttpServer::getAdminListByStatus(const QHttpServerRequest &req)
+    {
+        QJsonDocument docReq = QJsonDocument::fromJson(req.body());
+        const QJsonObject &jsonReq = docReq.object();
+
+        LOG() << "[getAdminListByStatus] 收到 getAdminListByStatus 请求, requestId=" << jsonReq["requestId"].toString();
+
+        int adminStatus = jsonReq["userStatus"].toInt();
+        if(0 == adminStatus){
+            LOG()<<"获取所有管理员信息列表";
+        }else if(1 == adminStatus){
+            LOG()<<"获取启⽤管理员信息列表";
+        }else{
+            LOG()<<"获取禁⽌管理员信息列表";
+        }
+
+        QJsonObject jsonBody;
+        jsonBody["totalCount"] = 200;
+
+        // 构造⼀⻚的管理员信息
+        QJsonArray adminListJson;
+        int pageCount = jsonReq["pageCount"].toInt();
+        QStringList remarks = {"视频审核", "运营⼈员2", "aaaaaa", "tiger"};
+        QStringList nickNames = {"管理员", "李信", "guqiao", "文乃"};
+        int userId = 1234;
+        long long email = 15012345678;
+        for(int i = 0; i < pageCount; ++i)
+        {
+            QJsonObject adminInfoJson;
+            adminInfoJson["userId"] = QString::number(userId++);
+            adminInfoJson["nickname"] = nickNames[rand()%4];
+            adminInfoJson["roleType"] = 2; // 平台管理员
+            adminInfoJson["email"] = QString::number(email++);
+
+            if(adminStatus == 0)
+            {
+                // 获取所有状态为禁⽌ 或者 启⽤ 的管理员
+                adminInfoJson["userStatu"] = rand()%2 + 1; // 状态为1-启⽤ 2-禁⽌
+            }
+            else
+            {
+                adminInfoJson["userStatu"] = adminStatus;
+            }
+            adminInfoJson["userMemo"] = remarks[rand()%4];
+
+            adminListJson.append(adminInfoJson);
+        }
+        jsonBody["userList"] = adminListJson;
+
+        // 构造响应体
+        QJsonObject jsonResp;
+        jsonResp["requestId"] = jsonReq["requestId"].toString();
+        jsonResp["errorCode"] = 0;
+        jsonResp["errorMsg"] = "";
+        jsonResp["data"] = jsonBody;
+
+        //  返回响应
+        QJsonDocument docResp;
+        docResp.setObject(jsonResp);
+
+        // 构造 HTTP 响应
+        QHttpServerResponse httpResp(docResp.toJson(), QHttpServerResponse::StatusCode::Ok);
+        httpResp.setHeader("Content-Type", "application/json; charset = utf-8");
+        return httpResp;
+    }
+
+    QHttpServerResponse HttpServer::newAdministrator(const QHttpServerRequest &req)
+    {
+        QJsonDocument docReq = QJsonDocument::fromJson(req.body());
+        const QJsonObject &jsonReq = docReq.object();
+
+        LOG() << "[newAdministrator] 收到 newAdministrator 请求, requestId=" << jsonReq["requestId"].toString();
+
+        QJsonObject adminJson = jsonReq["userInfo"].toObject();
+        LOG()<<"新增管理员信息：";
+        LOG()<<"nickName: "<<adminJson["nickname"].toString();
+
+        int roleType = adminJson["roleType"].toInt();
+        if(1 == roleType)
+        {
+            LOG()<<"roleType: 超级管理员";
+        }
+        else if(2 == roleType)
+        {
+            LOG()<<"roleType: 普通管理员";
+        }
+
+        int userStatue = adminJson["userStatu"].toInt();
+        if(1 == userStatue)
+        {
+            LOG()<<"userStatu: 启⽤";
+        }
+        else if(2 == userStatue)
+        {
+            LOG()<<"userStatu: 禁⽌";
+        }
+
+        LOG()<<"userMemo: "<<adminJson["userMemo"].toString();
+        LOG()<<"email: "<<adminJson["email"].toString();
+
+        // 构造响应体
+        QJsonObject jsonResp;
+        jsonResp["requestId"] = jsonReq["requestId"].toString();
+        jsonResp["errorCode"] = 0;
+        jsonResp["errorMsg"] = "";
+
+        QJsonObject jsonBody;
+        jsonBody["userId"] = "1234";
+
+        jsonResp["data"] = jsonBody;
+
+        //  返回响应
+        QJsonDocument docResp;
+        docResp.setObject(jsonResp);
+
+        // 构造 HTTP 响应
+        QHttpServerResponse httpResp(docResp.toJson(), QHttpServerResponse::StatusCode::Ok);
+        httpResp.setHeader("Content-Type", "application/json; charset = utf-8");
+        return httpResp;
+    }
+
+    QHttpServerResponse HttpServer::setAdministrator(const QHttpServerRequest &req)
+    {
+        QJsonDocument docReq = QJsonDocument::fromJson(req.body());
+        const QJsonObject &jsonReq = docReq.object();
+
+        LOG() << "[setAdministrator] 收到 setAdministrator 请求, requestId=" << jsonReq["requestId"].toString();
+
+        QJsonObject adminJson = jsonReq["userInfo"].toObject();
+        LOG()<<"编辑管理员"<<adminJson["userId"].toString()<<"信息:";
+        LOG()<<"nickName: "<<adminJson["nickname"].toString();
+
+        int userStatus = adminJson["userStatus"].toInt();
+        if(1 == userStatus)
+        {
+            LOG()<<"userStatus: 启⽤";
+        }
+        else if(2 == userStatus)
+        {
+            LOG()<<"userStatus: 禁⽌";
+        }
+        LOG()<<"userMemo: "<<adminJson["userMemo"].toString();
+
+        // 构造响应体
+        QJsonObject jsonResp;
+        jsonResp["requestId"] = jsonReq["requestId"].toString();
+        jsonResp["errorCode"] = 0;
+        jsonResp["errorMsg"] = "";
+
+        //  返回响应
+        QJsonDocument docResp;
+        docResp.setObject(jsonResp);
+
+        // 构造 HTTP 响应
+        QHttpServerResponse httpResp(docResp.toJson(), QHttpServerResponse::StatusCode::Ok);
+        httpResp.setHeader("Content-Type", "application/json; charset = utf-8");
+        return httpResp;
+    }
+
+    QHttpServerResponse HttpServer::setStatus(const QHttpServerRequest &req)
+    {
+
+        QJsonDocument docReq = QJsonDocument::fromJson(req.body());
+        const QJsonObject &jsonReq = docReq.object();
+
+        LOG() << "[setStatus] 收到 setStatus 请求, requestId=" << jsonReq["requestId"].toString();
+
+        int adminStatus = jsonReq["userStatus"].toInt();
+        QString adminId = jsonReq["userId"].toString();
+        QString status = "启⽤";
+        if(adminStatus == 2)
+        {
+           status = "禁⽤";
+        }
+        LOG()<<"管理员: "<<adminId<<"状态修改为"<<status;
+
+        // 构造响应体
+        QJsonObject jsonResp;
+        jsonResp["requestId"] = jsonReq["requestId"].toString();
+        jsonResp["errorCode"] = 0;
+        jsonResp["errorMsg"] = "";
+
+        //  返回响应
+        QJsonDocument docResp;
+        docResp.setObject(jsonResp);
+
+        // 构造 HTTP 响应
+        QHttpServerResponse httpResp(docResp.toJson(), QHttpServerResponse::StatusCode::Ok);
+        httpResp.setHeader("Content-Type", "application/json; charset = utf-8");
+        return httpResp;
+    }
+
+    QHttpServerResponse HttpServer::delAdministrator(const QHttpServerRequest &req)
+    {
+        QJsonDocument docReq = QJsonDocument::fromJson(req.body());
+        const QJsonObject &jsonReq = docReq.object();
+
+        LOG() << "[delAdministrator] 收到 delAdministrator 请求, requestId=" << jsonReq["requestId"].toString();
+
+
+        QString adminId = jsonReq["userId"].toString();
+        LOG()<<"管理员 "<<adminId<<"删除成功";
 
         // 构造响应体
         QJsonObject jsonResp;

@@ -424,6 +424,36 @@ void DataCenter::discardVideoAsync(const QString &videoId)
     httpClient.discardVideo(videoId);
 }
 
+void DataCenter::getAdminByEmailAsync(const QString &email)
+{
+    httpClient.getAdminByEmail(email);
+}
+
+void DataCenter::getAdminListByStatus(int pageIndex, AdminStatus adminStatus)
+{
+    httpClient.getAdminListByStatus(pageIndex, adminStatus);
+}
+
+void DataCenter::newAdminAsync(const AdminInfo &userInfo)
+{
+    httpClient.newAdmin(userInfo);
+}
+
+void DataCenter::editAdminAsync(const AdminInfo &userInfo)
+{
+    httpClient.editAdmin(userInfo);
+}
+
+void DataCenter::setAdminStatusAsync(const AdminInfo &userInfo)
+{
+    httpClient.setAdminStatus(userInfo);
+}
+
+void DataCenter::delAdminAsync(const QString &adminId)
+{
+    httpClient.delAdmin(adminId);
+}
+
 // 获取当前⽤⼾信息-当前⽤⼾：指当前使⽤播放平台的⽤⼾
 void DataCenter::setMyselfInfo(const QJsonObject &myselfInfoObj)
 {
@@ -550,6 +580,46 @@ VideoList *DataCenter::getStatusVideoList()
         statusVideoList = new VideoList();
     }
     return statusVideoList;
+}
+
+void DataCenter::setAdminList(const QJsonObject &adminJson, bool isAdminStatus)
+{
+    getAdminList();
+
+    if(isAdminStatus)
+    {
+        // 通过状态获取的管理员列表
+
+        //设置总⻚数
+        int totalCount = adminJson["totalCount"].toInt();
+        adminListPtr->totalCount = totalCount;
+        QJsonArray adminListArray = adminJson["userList"].toArray();
+
+        for(int i = 0; i < adminListArray.size(); ++i)
+        {
+            QJsonObject adminInfoObj = adminListArray[i].toObject();
+            AdminInfo adminInfo;
+            adminInfo.loadAdminInfo(adminInfoObj);
+            adminListPtr->addAdminInfo(adminInfo);
+        }
+    }
+    else
+    {
+        // 通过⼿机号获取的单个管理员信息
+        AdminInfo adminInfo;
+        adminInfo.loadAdminInfo(adminJson["userInfo"].toObject());
+        adminListPtr->addAdminInfo(adminInfo);
+        adminListPtr->totalCount = 1;
+    }
+}
+
+AdminList *DataCenter::getAdminList()
+{
+    if(adminListPtr == nullptr)
+    {
+        adminListPtr = new AdminList();
+    }
+    return adminListPtr;
 }
 
 

@@ -243,6 +243,8 @@ class AdminList
 public:
     // 添加管理员
     void addAdminInfo(const AdminInfo &adminInfo);
+    // 设置状态
+    void setAdminStatus(const QString& userId, AdminStatus adminStatus);
 
     QList<AdminInfo> adminList;         // 保存管理员信息
     int totalCount;                     // 系统中包含的管理员总的个数

@@ -145,6 +145,24 @@ private:
     // 下架视频
     QHttpServerResponse haltVideo(const QHttpServerRequest &req);
 
+    // 获取管理员信息-通过邮箱
+    QHttpServerResponse getAdminByEmail(const QHttpServerRequest &req);
+
+    // 获取管理员信息列表-通过状态
+    QHttpServerResponse getAdminListByStatus(const QHttpServerRequest &req);
+
+    // 新增管理员
+    QHttpServerResponse newAdministrator(const QHttpServerRequest &req);
+
+    // 编辑管理员
+    QHttpServerResponse setAdministrator(const QHttpServerRequest &req);
+
+    // 设置⽤⼾状态
+    QHttpServerResponse setStatus(const QHttpServerRequest &req);
+
+    // 删除管理员
+    QHttpServerResponse delAdministrator(const QHttpServerRequest &req);
+
 private:
     static HttpServer *instance;    // HttpServer的实例指针
     QHttpServer httpServer;         // Qt封装的QHttpServer对象

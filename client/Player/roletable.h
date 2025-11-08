@@ -26,15 +26,21 @@ public:
 
 
 private slots:
-    // 将RoleTableItem添加到表格
+    // 更新管理员列表信息到界⾯
     void updateRoleTable();
 
     // edituserdialog按钮点击触发
     void onInsertBtnClicked();
 
+    // 重置分⻚器
+    void resetPaginator(int pageCount);
+
 private:
     // 初始化样式表
     void initStyleSheet();
+
+    // 获取管理员列表
+    void getAdminList(int page);
 
 private:
     Ui::RoleTable *ui;
@@ -44,6 +50,9 @@ private:
 
     // 分⻚器指针
     Paginator* paginator = nullptr;
+
+    // 记录分⻚器⻚数
+    int page = 1;
 };
 
 #endif // ROLETABLE_H

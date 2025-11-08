@@ -279,6 +279,23 @@ void AdminInfo::loadAdminInfo(const QJsonObject &jsonObj)
     remark = jsonObj["userMemo"].toString();
 }
 
+void AdminList::addAdminInfo(const AdminInfo &adminInfo)
+{
+    adminList.append(adminInfo);
+}
+
+void AdminList::setAdminStatus(const QString &userId, AdminStatus adminStatus)
+{
+    for(auto &adminInfo : adminList)
+    {
+        if(adminInfo.userId == userId)
+        {
+            adminInfo.userStatus = adminStatus;
+            return;
+        }
+    }
+}
+
 
 } //end model
 
