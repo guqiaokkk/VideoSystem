@@ -1145,6 +1145,187 @@ void NetClient::discardVideo(const QString &videoId)
     });
 }
 
+void NetClient::getAdminByEmail(const QString &email)
+{
+    // 1. 构造请求
+    QJsonObject reqBody;
+    reqBody["sessionId"] = dataCenter->getLogingSessionId();
+    reqBody["email"] = email;
+
+    // 2. 发送请求
+    QNetworkReply *httpReply = sendHttpRequest("/HttpService/getAdminByEmail", reqBody);
+
+    // 3. 异步处理响应
+    connect(httpReply, &QNetworkReply::finished, this, [=](){
+        bool ok = false;
+        QString reason;
+        QJsonObject respObj = handleHttpResponse(httpReply, ok, reason);
+        if(!ok){
+            LOG()<<"getAdminByEmail 请求出错，reason = "<<reason << ", requestId=" << respObj["requestId"].toString();
+            return;
+        }
+
+        //  解析管理员信息
+        dataCenter->setAdminList(respObj["data"].toObject(), false);
+
+        //  发送信号通知界⾯更新
+        emit dataCenter->getAdminByEmailDone();
+        LOG() << "getAdminByEmail 成功, requestId=" << respObj["requestId"].toString();
+    });
+}
+
+void NetClient::getAdminListByStatus(int pageIndex, model::AdminStatus adminStatus)
+{
+    // 1. 构造请求
+    QJsonObject reqBody;
+    reqBody["sessionId"] = dataCenter->getLogingSessionId();
+    reqBody["pageIndex"] = pageIndex;
+    reqBody["pageCount"] = model::AdminList::PAGE_COUNT;
+    reqBody["userStatus"] = adminStatus;
+
+    // 2. 发送请求
+    QNetworkReply *httpReply = sendHttpRequest("/HttpService/getAdminListByStatus", reqBody);
+
+    // 3. 异步处理响应
+    connect(httpReply, &QNetworkReply::finished, this, [=](){
+        bool ok = false;
+        QString reason;
+        QJsonObject respObj = handleHttpResponse(httpReply, ok, reason);
+        if(!ok){
+            LOG()<<"getAdminListByStatus 请求出错，reason = "<<reason << ", requestId=" << respObj["requestId"].toString();
+            return;
+        }
+
+        //  解析管理员列表
+        dataCenter->setAdminList(respObj["data"].toObject(), true);
+
+        //  发送信号通知界⾯更新
+        emit dataCenter->getAdminListByStatusDone();
+        LOG() << "getAdminListByStatus 成功, requestId=" << respObj["requestId"].toString();
+    });
+}
+
+void NetClient::newAdmin(const model::AdminInfo &userInfo)
+{
+    // 1. 构造请求
+    QJsonObject reqBody;
+    reqBody["sessionId"] = dataCenter->getLogingSessionId();
+
+    QJsonObject adminJson;
+    adminJson["nickname"] = userInfo.nickName;
+    adminJson["roleType"] = static_cast<int>(userInfo.roleType);
+    adminJson["userStatu"] = static_cast<int>(userInfo.userStatus);
+    adminJson["userMemo"] = userInfo.remark;
+    adminJson["email"] = userInfo.email;
+
+    reqBody["userInfo"] = adminJson;
+
+    // 2. 发送请求
+    QNetworkReply *httpReply = sendHttpRequest("/HttpService/newAdministrator", reqBody);
+
+    // 3. 异步处理响应
+    connect(httpReply, &QNetworkReply::finished, this, [=](){
+        bool ok = false;
+        QString reason;
+        QJsonObject respObj = handleHttpResponse(httpReply, ok, reason);
+        if(!ok){
+            LOG()<<"newAdministrator 请求出错，reason = "<<reason << ", requestId=" << respObj["requestId"].toString();
+            return;
+        }
+
+        //  发送信号通知界⾯更新
+        emit dataCenter->newAdminDone();
+        LOG() << "newAdministrator 成功, requestId=" << respObj["requestId"].toString();
+    });
+}
+
+void NetClient::editAdmin(const model::AdminInfo &userInfo)
+{
+    // 1. 构造请求
+    QJsonObject reqBody;
+    reqBody["sessionId"] = dataCenter->getLogingSessionId();
+
+    QJsonObject adminJson;
+    adminJson["nickname"] = userInfo.nickName;
+    adminJson["userStatu"] = static_cast<int>(userInfo.userStatus);
+    adminJson["userMemo"] = userInfo.remark;
+    adminJson["userId"] = userInfo.userId;
+
+    reqBody["userInfo"] = adminJson;
+
+    // 2. 发送请求
+    QNetworkReply *httpReply = sendHttpRequest("/HttpService/setAdministrator", reqBody);
+
+    // 3. 异步处理响应
+    connect(httpReply, &QNetworkReply::finished, this, [=](){
+        bool ok = false;
+        QString reason;
+        QJsonObject respObj = handleHttpResponse(httpReply, ok, reason);
+        if(!ok){
+            LOG()<<"setAdministrator 请求出错，reason = "<<reason << ", requestId=" << respObj["requestId"].toString();
+            return;
+        }
+
+        //  发送信号通知界⾯更新
+        emit dataCenter->editAdminDone();
+        LOG() << "setAdministrator 成功, requestId=" << respObj["requestId"].toString();
+    });
+}
+
+void NetClient::setAdminStatus(const model::AdminInfo &userInfo)
+{
+    // 1. 构造请求
+    QJsonObject reqBody;
+    reqBody["sessionId"] = dataCenter->getLogingSessionId();
+    reqBody["userId"] = userInfo.userId;
+    reqBody["userStatus"] = static_cast<int>(userInfo.userStatus);
+
+    // 2. 发送请求
+    QNetworkReply *httpReply = sendHttpRequest("/HttpService/setStatus", reqBody);
+
+    // 3. 异步处理响应
+    connect(httpReply, &QNetworkReply::finished, this, [=](){
+        bool ok = false;
+        QString reason;
+        QJsonObject respObj = handleHttpResponse(httpReply, ok, reason);
+        if(!ok){
+            LOG()<<"setStatus 请求出错，reason = "<<reason << ", requestId=" << respObj["requestId"].toString();
+            return;
+        }
+
+        //  发送信号通知界⾯更新
+        emit dataCenter->setAdminStatusDone();
+        LOG() << "setStatus 成功, requestId=" << respObj["requestId"].toString();
+    });
+}
+
+void NetClient::delAdmin(const QString &adminId)
+{
+    // 1. 构造请求
+    QJsonObject reqBody;
+    reqBody["sessionId"] = dataCenter->getLogingSessionId();
+    reqBody["userId"] = adminId;
+
+
+    // 2. 发送请求
+    QNetworkReply *httpReply = sendHttpRequest("/HttpService/delAdministrator", reqBody);
+
+    // 3. 异步处理响应
+    connect(httpReply, &QNetworkReply::finished, this, [=](){
+        bool ok = false;
+        QString reason;
+        QJsonObject respObj = handleHttpResponse(httpReply, ok, reason);
+        if(!ok){
+            LOG()<<"delAdministrator 请求出错，reason = "<<reason << ", requestId=" << respObj["requestId"].toString();
+            return;
+        }
+
+        //  发送信号通知界⾯更新
+        emit dataCenter->delAdminDone();
+        LOG() << "delAdministrator 成功, requestId=" << respObj["requestId"].toString();
+    });
+}
+
 QString NetClient::makeRequestId()
 {
     return "R" + QUuid::createUuid().toString().sliced(25, 12);

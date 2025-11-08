@@ -102,7 +102,7 @@
           <string>*</string>
          </property>
         </widget>
-        <widget class="QLabel" name="phoneLabel">
+        <widget class="QLabel" name="emailLabel">
          <property name="geometry">
           <rect>
            <x>38</x>
@@ -115,10 +115,10 @@
           <string notr="true">#phoneLabel{ line-height: 19px; font-weight: 900; }</string>
          </property>
          <property name="text">
-          <string>用户手机号</string>
+          <string>用户邮箱</string>
          </property>
         </widget>
-        <widget class="QLineEdit" name="phoneEdit">
+        <widget class="QLineEdit" name="emailEdit">
          <property name="geometry">
           <rect>
            <x>122</x>

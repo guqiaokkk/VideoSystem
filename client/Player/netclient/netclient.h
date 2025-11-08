@@ -118,6 +118,24 @@ public:
     // 下架视频
     void discardVideo(const QString& videoId);
 
+    // 获取管理员信息-通过邮箱
+    void getAdminByEmail(const QString &email);
+
+    // 获取管理员列表-通过状态
+    void getAdminListByStatus(int pageIndex, model::AdminStatus adminStatus);
+
+    // 新增管理员
+    void newAdmin(const model::AdminInfo& userInfo);
+
+    // 编辑管理员
+    void editAdmin(const model::AdminInfo& userInfo);
+
+    // 设置⽤⼾状态
+    void setAdminStatus(const model::AdminInfo& userInfo);
+
+    // 删除管理员
+    void delAdmin(const QString& adminId);
+
 private:
     // ⽣成请求id
     static QString makeRequestId();

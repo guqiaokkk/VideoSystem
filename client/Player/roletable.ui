@@ -114,14 +114,14 @@
              <number>0</number>
             </property>
             <item>
-             <widget class="QLabel" name="phoneLabel">
+             <widget class="QLabel" name="emailLabel">
               <property name="text">
-               <string>用户手机号:</string>
+               <string>用户邮箱</string>
               </property>
              </widget>
             </item>
             <item>
-             <widget class="QLineEdit" name="phone">
+             <widget class="QLineEdit" name="email">
               <property name="minimumSize">
                <size>
                 <width>0</width>
@@ -136,6 +136,9 @@
               </property>
               <property name="styleSheet">
                <string notr="true">#phone{ background : #FFFFFF; border-radius : 4px; border : 1px solid #DCDEE0; padding-left : 18px; }</string>
+              </property>
+              <property name="text">
+               <string/>
               </property>
               <property name="placeholderText">
                <string>请输⼊⽤⼾⼿机号</string>

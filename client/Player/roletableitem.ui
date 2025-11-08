@@ -70,7 +70,7 @@
        <set>Qt::AlignmentFlag::AlignCenter</set>
       </property>
      </widget>
-     <widget class="QLabel" name="phoneLabel">
+     <widget class="QLabel" name="emailLabel">
       <property name="geometry">
        <rect>
         <x>348</x>

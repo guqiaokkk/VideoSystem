@@ -73,6 +73,10 @@ public:
     void setStatusVideoList(const QJsonObject &videoListObj);
     VideoList *getStatusVideoList();
 
+    // 获取和设置管理列表
+    void setAdminList(const QJsonObject &adminJson, bool isAdminStatus = true);
+    AdminList *getAdminList();
+
 private:
     explicit DataCenter(QObject *parent = nullptr);
 
@@ -181,6 +185,24 @@ public:
     // 下架视频
     void discardVideoAsync(const QString& videoId);
 
+    // 获取管理员列表-通过邮箱
+    void getAdminByEmailAsync(const QString& email);
+
+    // 获取管理员列表-通过状态获取
+    void getAdminListByStatus(int pageIndex, AdminStatus adminStatus);
+
+    // 新增管理员
+    void newAdminAsync(const AdminInfo& userInfo);
+
+    // 编辑管理员
+    void editAdminAsync(const AdminInfo& userInfo);
+
+    // 设置⽤⼾状态
+    void setAdminStatusAsync(const AdminInfo &userInfo);
+
+    // 删除管理员
+    void delAdminAsync(const QString& adminId);
+
 signals:
     void helloDone();
 
@@ -277,6 +299,24 @@ signals:
     // 下架视频完成
     void discardVideoDone();
 
+    // 获取管理员列表-通过邮箱完成
+    void getAdminByEmailDone();
+
+    // 获取管理员列表-通过状态获取完成
+    void getAdminListByStatusDone();
+
+    // 新增管理员完成
+    void newAdminDone();
+
+    // 编辑管理员完成
+    void editAdminDone();
+
+    // 设置⽤⼾状态完成
+    void setAdminStatusDone();
+
+    // 删除管理员完成
+    void delAdminDone();
+
 private:
     static DataCenter *instance;
 
@@ -308,7 +348,8 @@ private:
     // 状态视频列表
     VideoList *statusVideoList = nullptr;
 
-
+    // 管理员列表
+    AdminList* adminListPtr = nullptr;
 };
 
 
